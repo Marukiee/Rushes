@@ -1,4 +1,13 @@
 T = {
+"Project": "Project",
+"Pool": "Pool",
+"Maybe": "Misschien",
+"Unused": "Ongebruikt",
+"LUT off (C)": "LUT uit (C)",
+"LUT on (C)": "LUT aan (C)",
+"As shot": "Zoals opgenomen",
+"LUT on or off (C)": "LUT aan of uit (C)",
+"LUT on or off": "LUT aan of uit",
 "%@% of the shots around it": "%@% van de foto's eromheen",
 "Rating": "Beoordeling",
 "Any rating": "Elke beoordeling",

@@ -45,6 +45,17 @@ extension Suggestion {
 }
 
 extension ResolveIndex.Usage {
+    /// The same in one short word, for the small pill on a thumbnail.
+    var shortBadge: (text: String, symbol: String, color: Color) {
+        let full = badge
+        switch status {
+        case .used: return (String(localized: "Project"), full.symbol, full.color)
+        case .poolOnly: return (String(localized: "Pool"), full.symbol, full.color)
+        case .possible: return (String(localized: "Maybe"), full.symbol, full.color)
+        case .unused: return (String(localized: "Unused"), full.symbol, full.color)
+        }
+    }
+
     var badge: (text: String, symbol: String, color: Color) {
         switch status {
         case .used: (String(localized: "In a project"), "checkmark.seal.fill", VerdictStyle.keep)
@@ -237,7 +248,7 @@ struct ClipCell: View {
                 if let suggestion = model.suggestions[item.id], verdict == .undecided {
                     badge(suggestion.text, symbol: suggestion.symbol, color: VerdictStyle.hint)
                 } else if showUsage, let usage = model.usage[item.id], item.kind == .video || usage.status != .unused {
-                    let info = usage.badge
+                    let info = usage.shortBadge
                     badge(info.text, symbol: info.symbol, color: info.color)
                 }
             }
@@ -251,7 +262,11 @@ struct ClipCell: View {
                         Image(systemName: "photo").font(.system(size: 9))
                         if item.companion(.pair) != nil { Text("RAW+JPG").font(.system(size: 9, weight: .bold)) }
                     }
+                    // How much room it takes, for deciding what is worth keeping.
+                    Text(Format.bytes(item.totalBytes)).font(.system(size: 10, weight: .medium).monospacedDigit()).foregroundStyle(.white.opacity(0.7))
                 }
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
                 .foregroundStyle(.white)
                 .padding(.horizontal, 7)
                 .padding(.vertical, 3)
@@ -273,13 +288,13 @@ struct ClipCell: View {
     }
 
     private func badge(_ text: String, symbol: String, color: Color) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: symbol).font(.system(size: 9, weight: .bold))
-            Text(text).font(.system(size: 10, weight: .bold)).lineLimit(1)
+        HStack(spacing: 3) {
+            Image(systemName: symbol).font(.system(size: 8, weight: .bold))
+            Text(text).font(.system(size: 9, weight: .bold)).lineLimit(1)
         }
         .foregroundStyle(.white)
-        .padding(.horizontal, 7)
-        .padding(.vertical, 3)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
         .background(color.opacity(0.92), in: .capsule)
     }
 }

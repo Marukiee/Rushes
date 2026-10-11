@@ -98,6 +98,28 @@ private struct IntegritySheet: View {
 
 // MARK: Sidebar
 
+/// A row of the sidebar that lights up under the pointer, the way the rows of Tandem's sidebar do.
+private struct HoverRow<Content: View>: View {
+    @Environment(\.hoverEnabled) private var hoverEnabled
+    @LocalState private var hovering = false
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        content
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                // Drawn a little wider than the label, so it covers the row the way the selection does.
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.primary.opacity(hovering && hoverEnabled ? 0.08 : 0))
+                    .padding(.horizontal, -8)
+                    .padding(.vertical, -5)
+            }
+            .contentShape(Rectangle())
+            .onHover { hovering = $0 }
+            .animation(.rushesFade, value: hovering)
+    }
+}
+
 /// The system sidebar: a list with symbols and badges, the folders of the library under it. Nothing in it is drawn by hand,
 /// so it looks and behaves like the sidebar of any other Mac app, glass included.
 struct Sidebar: View {
@@ -107,25 +129,25 @@ struct Sidebar: View {
         @Bindable var app = app
         List(selection: $app.sidebarSelection) {
             Section {
-                Label("Overview", systemImage: "square.grid.2x2").tag(SidebarItem.overview)
-                Label("Card", systemImage: "sdcard")
+                HoverRow { Label("Overview", systemImage: "square.grid.2x2") }.tag(SidebarItem.overview)
+                HoverRow { Label("Card", systemImage: "sdcard") }
                     .badge(cardBadge)
                     .tag(SidebarItem.card)
             }
             Section("Library") {
                 if app.library.folders.isEmpty {
-                    Label("Library", systemImage: "externaldrive").tag(SidebarItem.library)
+                    HoverRow { Label("Library", systemImage: "externaldrive") }.tag(SidebarItem.library)
                 } else {
                     ForEach(app.library.folders) { folder in
-                        Label(folder.name, systemImage: "folder")
+                        HoverRow { Label(folder.name, systemImage: "folder") }
                             .badge(folder.reclaimableBytes > 0 ? Text(Format.bytes(folder.reclaimableBytes)) : nil)
                             .tag(SidebarItem.folder(folder.id))
                     }
                 }
             }
             Section {
-                Label("Imports", systemImage: "clock.arrow.circlepath").tag(SidebarItem.history)
-                Label("DaVinci Resolve", systemImage: "film.stack").tag(SidebarItem.resolve)
+                HoverRow { Label("Imports", systemImage: "clock.arrow.circlepath") }.tag(SidebarItem.history)
+                HoverRow { Label("DaVinci Resolve", systemImage: "film.stack") }.tag(SidebarItem.resolve)
             }
         }
         .listStyle(.sidebar)

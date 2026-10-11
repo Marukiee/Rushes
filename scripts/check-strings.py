@@ -140,7 +140,7 @@ for number, line in enumerate(strings_path.read_text().splitlines(), 1):
     if key in translations:
         problems.append(f"{strings_path.name}:{number}: twice: {key[:60]}")
     translations[key] = value
-    for dash in ("—", "–"):
+    for dash in ("\u2014", "\u2013"):
         if dash in value:
             problems.append(f"{strings_path.name}:{number}: has a dash that breaks a sentence: {value[:60]}")
     if len(re.findall(r"%(@|lld|\.1f)", key)) != len(re.findall(r"%(@|lld|\.1f)", value)):

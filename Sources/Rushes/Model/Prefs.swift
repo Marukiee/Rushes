@@ -47,6 +47,7 @@ enum PrefKey {
     static let advanceAfterVerdict = "advanceAfterVerdict"
     static let useProxies = "useProxies"
     static let lutMode = "lutMode"
+    static let lookOn = "lookOn"
     static let finderTags = "finderTags"
     static let suggestionsEnabled = "suggestionsEnabled"
     static let shortClipSeconds = "shortClipSeconds"
@@ -71,6 +72,11 @@ enum Prefs {
     static let defaults = UserDefaults.standard
 
     static func register() {
+        // The details under the picture are on from this version on, also for someone who switched them off in an older one.
+        if !defaults.bool(forKey: "detailsOnByDefaultApplied") {
+            defaults.set(true, forKey: PrefKey.showInspector)
+            defaults.set(true, forKey: "detailsOnByDefaultApplied")
+        }
         defaults.register(defaults: [
             PrefKey.cardBehavior: CardBehavior.review.rawValue,
             PrefKey.showRecognitionCard: true,

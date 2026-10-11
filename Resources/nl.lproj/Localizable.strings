@@ -139,6 +139,7 @@
 "Also make a timeline of the video clips, in shooting order" = "Maak ook een timeline van de videoclips, in opnamevolgorde";
 "Another import is still running" = "Er loopt nog een andere import";
 "Any rating" = "Elke beoordeling";
+"As shot" = "Zoals opgenomen";
 "Ask for a name for the folder" = "Vraag om een naam voor de map";
 "Asking Resolve..." = "Resolve bevragen...";
 "Back, stop, forward (again for faster)" = "Terug, stop, vooruit (nog eens voor sneller)";
@@ -283,6 +284,9 @@
 "Kept %lld" = "%lld behouden";
 "Keys" = "Toetsen";
 "Kind" = "Soort";
+"LUT off (C)" = "LUT uit (C)";
+"LUT on (C)" = "LUT aan (C)";
+"LUT on or off" = "LUT aan of uit";
 "Language" = "Taal";
 "Later" = "Later";
 "Leave out" = "Overslaan";
@@ -307,6 +311,7 @@
 "Looking at what is on the card. Nothing is copied yet." = "Kijken wat er op de kaart staat. Er is nog niets gekopieerd.";
 "Make a timeline of the video clips as well" = "Maak ook een timeline van de videoclips";
 "Mark copied files with a Finder tag" = "Markeer gekopieerde bestanden met een Finder-tag";
+"Maybe" = "Misschien";
 "Maybe used" = "Misschien gebruikt";
 "Media pool only" = "Alleen in media pool";
 "Missing: %@" = "Ontbreekt: %@";
@@ -388,6 +393,8 @@
 "Play or pause" = "Afspelen of pauzeren";
 "Playing" = "Afspelen";
 "Point DaVinci Resolve at the new name?" = "DaVinci Resolve naar de nieuwe naam laten wijzen?";
+"Pool" = "Pool";
+"Project" = "Project";
 "Projects" = "Projecten";
 "Projects made on Linux point at /run/media/..., which Rushes already understands. Use this for anything else." = "Projecten die op Linux zijn gemaakt wijzen naar /run/media/..., wat Rushes al begrijpt. Gebruik dit voor al het andere.";
 "Protect" = "Beschermen";
@@ -528,6 +535,7 @@
 "Undo (Z)" = "Ongedaan maken (Z)";
 "Undone: %@" = "Ongedaan gemaakt: %@";
 "Undone: %lld" = "Ongedaan gemaakt: %lld";
+"Unused" = "Ongebruikt";
 "Up next" = "Hierna";
 "Update and restart" = "Werk bij en start opnieuw";
 "Updates" = "Updates";

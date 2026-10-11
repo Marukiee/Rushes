@@ -148,14 +148,15 @@ struct CardMoreMenu: View {
     }
 }
 
-/// Shows or hides the card of details under the picture.
+/// Shows or hides the card of details under the picture. It is a toggle, so it can be seen whether it is on.
 struct DetailsToggle: View {
+    @AppStorage(PrefKey.showInspector) private var showDetails = true
+
     var body: some View {
-        Button {
-            Prefs.defaults.set(!Prefs.bool(PrefKey.showInspector), forKey: PrefKey.showInspector)
-        } label: {
-            Label("Details", systemImage: "info.circle")
+        Toggle(isOn: $showDetails) {
+            Label("Details", systemImage: showDetails ? "info.circle.fill" : "info.circle")
         }
+        .toggleStyle(.button)
         .help("Details (I)")
     }
 }
@@ -181,6 +182,7 @@ struct KeyHints: View {
                     hint("Z", "Undo")
                     hint("U", "Clear the choice")
                     hint("M", "Sound on or off")
+                    hint("C", "LUT on or off")
                     hint("I", "Details on or off")
                     hint("⇧ click, ⌘ click", "Select several")
                 }

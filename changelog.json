@@ -1,5 +1,36 @@
 [
   {
+    "version": "0.1.3",
+    "date": "2026-10-11",
+    "highlight": false,
+    "en": {
+      "title": "LUT switch, sizes, hover",
+      "new": [
+        "Turn the LUT on and off with C or the button in the player bar",
+        "The size of each clip and photo shows on its thumbnail"
+      ],
+      "better": [
+        "Everything answers the pointer, quickly",
+        "The details are on by default and the button shows when they are on",
+        "Up next lights up under the pointer instead of growing",
+        "The project pill is shorter"
+      ]
+    },
+    "nl": {
+      "title": "LUT schakelaar, groottes, hover",
+      "new": [
+        "Zet de LUT aan en uit met C of de knop in de afspeelbalk",
+        "De grootte van elke clip en foto staat op de thumbnail"
+      ],
+      "better": [
+        "Alles reageert snel op de aanwijzer",
+        "De details staan standaard aan en de knop laat zien wanneer ze aan staan",
+        "Hierna licht op onder de aanwijzer in plaats van te groeien",
+        "De projectpill is korter"
+      ]
+    }
+  },
+  {
     "version": "0.1.2",
     "date": "2026-10-11",
     "highlight": false,

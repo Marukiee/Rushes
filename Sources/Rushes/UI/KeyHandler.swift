@@ -95,6 +95,7 @@ struct KeyHandler: NSViewRepresentable {
             case "u": model.set(.undecided, advance: false); return true
             case "z": model.undo(); return true
             case "m": player.muted.toggle(); return true
+            case "c": player.toggleLook(); return true
             case "i": toggleDetails(); return true
             case "0": model.rate(0); return true
             case "1", "2", "3", "4", "5": model.rate(Int(key) ?? 0); return true

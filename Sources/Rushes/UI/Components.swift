@@ -63,6 +63,7 @@ struct CapsuleButtonStyle: ButtonStyle {
             .background(prominent ? AnyShapeStyle(tint) : AnyShapeStyle(Color.primary.opacity(0.10)), in: Capsule())
             .opacity(configuration.isPressed ? 0.8 : 1)
             .scaleEffect(configuration.isPressed ? pressedScale : 1)
+            .hoverSwell(1.03)
             .animation(.rushesBouncy, value: configuration.isPressed)
     }
 }
@@ -89,9 +90,9 @@ struct ActionButton: View {
         if floating {
             button.buttonStyle(CapsuleButtonStyle(prominent: prominent, tint: tint))
         } else if prominent {
-            button.buttonStyle(.borderedProminent).tint(tint).buttonBorderShape(.capsule).controlSize(.large)
+            button.buttonStyle(.borderedProminent).tint(tint).buttonBorderShape(.capsule).controlSize(.large).hoverSwell(1.03)
         } else {
-            button.buttonStyle(.bordered).buttonBorderShape(.capsule).controlSize(.large)
+            button.buttonStyle(.bordered).buttonBorderShape(.capsule).controlSize(.large).hoverSwell(1.03)
         }
     }
 }
@@ -146,6 +147,7 @@ struct GlassSegmented<Value: Hashable>: View {
     var height: CGFloat = 40
 
     private let inset: CGFloat = 4
+    @LocalState private var hoveredIndex: Int?
 
     private var selectedIndex: Int { options.firstIndex { $0.value == selection } ?? 0 }
 
@@ -161,14 +163,16 @@ struct GlassSegmented<Value: Hashable>: View {
                     ForEach(options.indices, id: \.self) { index in
                         Text(options[index].title)
                             .font(.callout.weight(index == selectedIndex ? .semibold : .medium))
-                            .foregroundStyle(index == selectedIndex ? Color.primary : Color.secondary)
+                            .foregroundStyle(index == selectedIndex || hoveredIndex == index ? Color.primary : Color.secondary)
                             .lineLimit(1)
                             .frame(width: segment, height: geometry.size.height)
+                            .onHover { inside in hoveredIndex = inside ? index : (hoveredIndex == index ? nil : hoveredIndex) }
                     }
                 }
                 .padding(.horizontal, inset)
             }
             .contentShape(Capsule())
+            .animation(.rushesFade, value: hoveredIndex)
             .gesture(
                 DragGesture(minimumDistance: 0).onChanged { value in
                     let index = min(options.count - 1, max(0, Int((value.location.x - inset) / segment)))

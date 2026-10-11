@@ -126,6 +126,10 @@ enum DebugSupport {
             guard let review, parts.count > 1 else { return }
             review.ratingFilter = parts[1] == "any" ? .any : (parts[1] == "unrated" ? .unrated : .atLeast(Int(parts[1]) ?? 1))
             review.refresh()
+        case "look":
+            PlayerController.current?.toggleLook()
+        case "pause":
+            PlayerController.current?.pause()
         case "wait":
             try? await Task.sleep(for: .seconds(Double(parts.last ?? "1") ?? 1))
         case "import":

@@ -55,6 +55,8 @@ extension Animation {
     static let rushesBouncy = Animation.spring(response: 0.38, dampingFraction: 0.55)
     /// Colour and opacity.
     static let rushesFade = Animation.easeOut(duration: 0.22)
+    /// What the pointer sets going: quick, with a little give, so a control answers before the pointer has stopped.
+    static let rushesHover = Animation.spring(response: 0.24, dampingFraction: 0.74)
 }
 
 /// How far a pressed element shrinks. Small enough to feel, not to distract.
@@ -139,7 +141,7 @@ struct HoverLift: ViewModifier {
             .offset(y: active && !reduceMotion ? -lift : 0)
             .shadow(color: .black.opacity(active ? 0.10 : 0), radius: active ? 14 : 0, y: active ? 7 : 0)
             .onHover { hovering = $0 }
-            .animation(reduceMotion ? .rushesFade : .rushesSpringy, value: active)
+            .animation(reduceMotion ? .rushesFade : .rushesHover, value: active)
     }
 }
 
@@ -155,7 +157,7 @@ struct HoverSwell: ViewModifier {
         content
             .scaleEffect(hovering && hoverEnabled && !reduceMotion ? scale : 1)
             .onHover { hovering = $0 }
-            .animation(.rushesSpringy, value: hovering)
+            .animation(.rushesHover, value: hovering)
     }
 }
 
@@ -258,7 +260,39 @@ private struct BouncyButtonBody: View {
             .scaleEffect(configuration.isPressed ? pressedScale : (hovering && hoverEnabled && isEnabled && !reduceMotion ? 1.06 : 1))
             .onHover { hovering = $0 }
             .animation(.rushesBouncy, value: configuration.isPressed)
-            .animation(.rushesSpringy, value: hovering)
+            .animation(.rushesHover, value: hovering)
+    }
+}
+
+/// A picture to click, like the ones under Up next: the picture itself stays as it is, and what answers the pointer is a ring
+/// and a little light, quickly. A picture that grew under the pointer would cover what is next to it.
+struct ThumbButtonStyle: ButtonStyle {
+    var radius: CGFloat = 12
+
+    func makeBody(configuration: Configuration) -> some View {
+        ThumbButtonBody(configuration: configuration, radius: radius)
+    }
+}
+
+private struct ThumbButtonBody: View {
+    let configuration: ButtonStyleConfiguration
+    let radius: CGFloat
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.hoverEnabled) private var hoverEnabled
+    @LocalState private var hovering = false
+
+    var body: some View {
+        let active = hovering && hoverEnabled && isEnabled
+        configuration.label
+            .overlay {
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(active ? 0.45 : 0), lineWidth: 2)
+            }
+            .brightness(active ? 0.06 : 0)
+            .opacity(configuration.isPressed ? 0.8 : 1)
+            .onHover { hovering = $0 }
+            .animation(.easeOut(duration: 0.12), value: active)
+            .animation(.easeOut(duration: 0.08), value: configuration.isPressed)
     }
 }
 
@@ -291,6 +325,10 @@ private struct IconButtonBody: View {
 
 extension ButtonStyle where Self == BouncyButtonStyle {
     static var bouncy: BouncyButtonStyle { BouncyButtonStyle() }
+}
+
+extension ButtonStyle where Self == ThumbButtonStyle {
+    static var thumb: ThumbButtonStyle { ThumbButtonStyle() }
 }
 
 extension ButtonStyle where Self == IconButtonStyle {
@@ -351,9 +389,9 @@ private struct RushesButtonStyle: ViewModifier {
         if floating {
             content.buttonStyle(CapsuleButtonStyle(prominent: prominent))
         } else if prominent {
-            content.buttonStyle(.borderedProminent).buttonBorderShape(.capsule)
+            content.buttonStyle(.borderedProminent).buttonBorderShape(.capsule).hoverSwell(1.03)
         } else {
-            content.buttonStyle(.bordered).buttonBorderShape(.capsule)
+            content.buttonStyle(.bordered).buttonBorderShape(.capsule).hoverSwell(1.03)
         }
     }
 }

@@ -14,6 +14,8 @@ final class PlayerController {
     private(set) var isPlaying = false
     private(set) var rate: Float = 0
     private(set) var lutName: String?
+    /// Whether the look is on the picture. It can be turned off to see the clip as it was shot, and stays that way for the next clip.
+    private(set) var lookOn = Prefs.defaults.object(forKey: PrefKey.lookOn) as? Bool ?? true
     private(set) var failed: String?
     /// Width over height of what is playing, as soon as the player knows it, so the picture can be shown without black bars.
     private(set) var videoAspect: CGFloat?
@@ -28,8 +30,12 @@ final class PlayerController {
     private var rateObservation: NSKeyValueObservation?
     private var loops = true
     private var loadID = 0
+    private var lookComposition: AVVideoComposition?
     private var lutCache: [URL: CubeLUT] = [:]
     private var builtIn: CubeLUT?
+
+    /// The player in view, for the scripted runs of the debug build.
+    nonisolated(unsafe) static weak var current: PlayerController?
 
     init() {
         muted = !Prefs.bool(PrefKey.soundOn)
@@ -57,6 +63,7 @@ final class PlayerController {
     // MARK: Loading
 
     func load(url: URL, lutURL: URL?, useLUT: Bool, isLog: Bool, autoplay: Bool, loop: Bool) async {
+        Self.current = self
         loadID += 1
         let current = loadID
         failed = nil
@@ -71,14 +78,15 @@ final class PlayerController {
         item.audioTimePitchAlgorithm = .timeDomain
 
         var applied: String?
+        var composition: AVVideoComposition?
         if useLUT, let lut = lut(from: lutURL, isLog: isLog) {
-            if let composition = try? await Look.composition(for: asset, lut: lut.lut) {
-                item.videoComposition = composition
-                applied = lut.name
-            }
+            composition = try? await Look.composition(for: asset, lut: lut.lut)
+            if composition != nil { applied = lut.name }
         }
         guard current == loadID else { return }
         lutName = applied
+        lookComposition = composition
+        item.videoComposition = lookOn ? composition : nil
 
         if let endObserver { NotificationCenter.default.removeObserver(endObserver) }
         endObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: item, queue: .main) { [weak self] _ in
@@ -135,8 +143,17 @@ final class PlayerController {
         return made
     }
 
+    /// Puts the look on the picture or takes it off, while it plays or is paused.
+    func toggleLook() {
+        guard let lookComposition else { return }
+        lookOn.toggle()
+        Prefs.defaults.set(lookOn, forKey: PrefKey.lookOn)
+        player.currentItem?.videoComposition = lookOn ? lookComposition : nil
+    }
+
     func unload() {
         loadID += 1
+        lookComposition = nil
         videoAspect = nil
         player.pause()
         player.replaceCurrentItem(with: nil)

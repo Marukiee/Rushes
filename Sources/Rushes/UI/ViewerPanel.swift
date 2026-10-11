@@ -16,9 +16,14 @@ struct ViewerPanel: View {
         GeometryReader { geometry in
             // The picture is as wide as the column and never taller than about two thirds of it, so a tall photo leaves room for
             // the buttons. The frame is exactly the shape of the picture: no bars, and the clip goes round that.
-            let tallest = max(220, geometry.size.height * 0.55)
+            // The details and the look ahead are both wanted, so the picture gives up height for them before either goes away.
+            let barReserve: CGFloat = 76
+            let detailsReserve: CGFloat = showDetails ? (model.mode == .library ? 280 : 222) : 0
+            let upNextReserve: CGFloat = 104
+            let tallest = min(geometry.size.height * 0.6, max(200, geometry.size.height - barReserve - detailsReserve - upNextReserve))
             let height = min(geometry.size.width / aspect, tallest)
             let width = height * aspect
+            let showUpNext = geometry.size.height - height - barReserve - detailsReserve > upNextReserve - 12
             VStack(spacing: Space.l) {
                 stage
                     // The picture is dark whatever the Mac is set to, so what floats over it is dark glass with white text.
@@ -29,11 +34,17 @@ struct ViewerPanel: View {
                 VerdictBar(model: model, onKeep: { perform(.keep) }, onSkip: { perform(.skip) })
                 if showDetails, let item = model.focusItem {
                     DetailsCard(model: model, item: item)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
                 // What is left of the height goes to a look ahead, so the next clip is never a surprise.
-                if geometry.size.height - height - (showDetails ? 290 : 100) > 90 { UpNextStrip(model: model) }
+                if showUpNext {
+                    UpNextStrip(model: model)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .animation(.rushes, value: showDetails)
+            .animation(.rushes, value: showUpNext)
         }
         .task(id: model.focusID) { await load() }
         .onDisappear { player.unload() }
@@ -165,6 +176,18 @@ private struct TransportBar: View {
     var lutName: String?
 
     var body: some View {
+        // The whole bar when the picture is wide enough, a short one when it is narrow, so nothing falls off the end.
+        ViewThatFits(in: .horizontal) {
+            bar(full: true)
+            bar(full: false)
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .rushesVideoGlass(.capsule)
+    }
+
+    private func bar(full: Bool) -> some View {
         HStack(spacing: 12) {
             Button { player.togglePlay() } label: {
                 Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
@@ -172,40 +195,52 @@ private struct TransportBar: View {
                     .frame(width: 30, height: 30)
                     .contentTransition(.symbolEffect(.replace))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.bouncy)
             Text(Format.timecode(player.currentTime))
                 .font(.system(size: 12, weight: .medium).monospacedDigit())
                 .foregroundStyle(.white.opacity(0.9))
-                .frame(width: 52, alignment: .trailing)
+                .fixedSize()
             Slider(
                 value: Binding(get: { player.currentTime }, set: { player.seek(to: $0) }),
                 in: 0 ... max(player.duration, 0.1)
             )
             .controlSize(.small)
-            Text(Format.timecode(player.duration))
-                .font(.system(size: 12, weight: .medium).monospacedDigit())
-                .foregroundStyle(.white.opacity(0.6))
-                .frame(width: 52, alignment: .leading)
+            .frame(minWidth: 60)
+            if full {
+                Text(Format.timecode(player.duration))
+                    .font(.system(size: 12, weight: .medium).monospacedDigit())
+                    .foregroundStyle(.white.opacity(0.6))
+                    .fixedSize()
+            }
             if player.rate != 0 && abs(player.rate) != 1 {
                 Text("\(player.rate > 0 ? "" : "-")\(Int(abs(player.rate)))x")
                     .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(.white)
+                    .fixedSize()
             }
             if let lutName {
-                Chip(text: lutName, symbol: "camera.filters", tint: Palette.indigoLight)
+                // Flat on the glass of the bar: a chip with a pill of its own would be a pill in a pill.
+                Button { player.toggleLook() } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "camera.filters").font(.system(size: 12, weight: .bold))
+                        if full {
+                            (player.lookOn ? Text(verbatim: lutName) : Text("As shot")).font(.caption.weight(.semibold)).lineLimit(1)
+                        }
+                    }
+                    .foregroundStyle(player.lookOn ? Palette.indigoLight : Color.white.opacity(0.55))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.bouncy)
+                .help(player.lookOn ? LocalizedStringKey("LUT off (C)") : LocalizedStringKey("LUT on (C)"))
             }
             Button { player.muted.toggle() } label: {
                 Image(systemName: player.muted ? "speaker.slash.fill" : "speaker.wave.2.fill")
                     .font(.system(size: 13))
                     .frame(width: 24, height: 24)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.bouncy)
             .help(player.muted ? LocalizedStringKey("Sound on (M)") : LocalizedStringKey("Sound off (M)"))
         }
-        .foregroundStyle(.white)
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
-        .rushesVideoGlass(.capsule)
     }
 }
 
@@ -239,6 +274,7 @@ struct VerdictBar: View {
                 }
                 .buttonStyle(.glass)
                 .controlSize(.large)
+                .hoverSwell(1.06)
                 .disabled(!model.canUndo)
                 .help("Undo (Z)")
 
@@ -272,6 +308,7 @@ struct VerdictBar: View {
         .buttonStyle(.glassProminent)
         .tint(selected ? tint : tint.opacity(0.85))
         .controlSize(.large)
+        .hoverSwell(1.025)
         .help(title)
     }
 }
@@ -388,7 +425,7 @@ private struct MiniThumb: View {
                 .clipShape(shape)
                 .overlay { shape.strokeBorder(Color.white.opacity(0.08), lineWidth: 1) }
         }
-        .buttonStyle(.bouncy)
+        .buttonStyle(.thumb)
         .frame(maxWidth: .infinity)
         .task(id: item.id) { image = await Thumbnailer.shared.image(for: item, root: model.root, maxPixel: 240, look: Prefs.lutMode.look) }
         .help(item.name)
