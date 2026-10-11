@@ -1,0 +1,148 @@
+name: Release
+
+# Push a tag like v1.2.3 and this builds, signs and publishes the app.
+# Run by hand from the Actions tab to try the build without publishing.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Version tag to build, for example v0.1.0 (ignored when run from a tag)
+        type: string
+      publish:
+        description: Create the GitHub Release, not only build the files
+        type: boolean
+        default: false
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  meta:
+    name: Version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.v.outputs.tag }}
+      version: ${{ steps.v.outputs.version }}
+      code: ${{ steps.v.outputs.code }}
+      prerelease: ${{ steps.v.outputs.prerelease }}
+      publish: ${{ steps.v.outputs.publish }}
+    steps:
+      - id: v
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+          INPUT_PUBLISH: ${{ inputs.publish }}
+        run: |
+          set -euo pipefail
+          if [ "$REF_TYPE" = tag ]; then tag="$REF_NAME"; else tag="$INPUT_TAG"; fi
+          re='^v([0-9]+)\.([0-9]+)\.([0-9]+)(-[0-9A-Za-z.-]+)?$'
+          [[ "$tag" =~ $re ]] || { echo "::error::'$tag' is not a version tag like v1.2.3"; exit 1; }
+          major=$((10#${BASH_REMATCH[1]})); minor=$((10#${BASH_REMATCH[2]})); patch=$((10#${BASH_REMATCH[3]}))
+          publish=false
+          if [ "$REF_TYPE" = tag ] || [ "$INPUT_PUBLISH" = true ]; then publish=true; fi
+          {
+            echo "tag=$tag"
+            echo "version=${tag#v}"
+            echo "code=$((major * 10000 + minor * 100 + patch))"
+            echo "prerelease=$([[ "$tag" == *-* ]] && echo true || echo false)"
+            echo "publish=$publish"
+          } >> "$GITHUB_OUTPUT"
+
+  macos:
+    name: Mac app
+    needs: meta
+    runs-on: macos-26
+    timeout-minutes: 45
+    env:
+      VERSION: ${{ needs.meta.outputs.version }}
+      BUILD: ${{ needs.meta.outputs.code }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Run the checks
+        run: swift run RushesChecks
+
+      - name: Import the signing certificate
+        env:
+          MACOS_CERT_P12_B64: ${{ secrets.MACOS_CERT_P12_B64 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+        run: ./scripts/mac-signing.sh ci
+
+      - name: Build and sign the app
+        run: ./scripts/build-macos.sh release
+
+      - name: Check the bundle
+        run: |
+          set -euo pipefail
+          app=dist/Rushes.app
+          plist="$app/Contents/Info.plist"
+          codesign --verify --deep --strict "$app"
+          [ "$(plutil -extract CFBundleShortVersionString raw "$plist")" = "$VERSION" ] \
+            || { echo "::error::the app has the wrong version"; exit 1; }
+          # The key in the app must be the one the signature is made for.
+          [ "$(plutil -extract RushesUpdatePublicKey raw "$plist")" = "$(tr -d '[:space:]' < Resources/update-public-key.txt)" ] \
+            || { echo "::error::the app does not carry the update public key"; exit 1; }
+          [ -f "$app/Contents/Resources/resolve_bridge.py" ] || { echo "::error::the Resolve script is missing"; exit 1; }
+
+      # The zip is what the app downloads. The .sig is over these exact bytes, so
+      # nothing may touch the zip after it is signed.
+      - name: Zip and sign
+        env:
+          RUSHES_UPDATE_ED25519_SECRET: ${{ secrets.RUSHES_UPDATE_ED25519_SECRET }}
+        run: |
+          set -euo pipefail
+          mkdir release
+          ditto -c -k --keepParent dist/Rushes.app release/Rushes-macOS.zip
+          (cd release && shasum -a 256 Rushes-macOS.zip > Rushes-macOS.zip.sha256)
+          swift scripts/sign-update.swift release/Rushes-macOS.zip > release/Rushes-macOS.zip.sig
+          cp release/Rushes-macOS.zip "release/Rushes-v$VERSION-macOS.zip"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: macos
+          path: release/*
+          if-no-files-found: error
+
+  publish:
+    name: GitHub Release
+    needs: [meta, macos]
+    if: ${{ !cancelled() && needs.meta.outputs.publish == 'true' && needs.macos.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: macos
+          path: dist
+
+      - name: List the files
+        run: ls -l dist
+
+      # The same text the app shows under What's new, so the release page and the app agree.
+      - name: Release notes
+        env:
+          VERSION: ${{ needs.meta.outputs.version }}
+        run: python3 scripts/release-notes.py "$VERSION" > notes.md
+
+      # The app looks for Rushes-macOS.zip with .sha256 and .sig in releases/latest.
+      - uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ needs.meta.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          body_path: notes.md
+          make_latest: ${{ needs.meta.outputs.prerelease != 'true' }}
+          prerelease: ${{ needs.meta.outputs.prerelease == 'true' }}
+          fail_on_unmatched_files: true
+          files: dist/*

@@ -1,0 +1,27 @@
+[
+  {
+    "version": "0.1.0",
+    "date": "2026-10-11",
+    "highlight": true,
+    "en": {
+      "title": "The first Rushes",
+      "new": [
+        "Put a card in with your disk connected and Rushes recognises both, then asks what to do",
+        "Look through everything on the card first and copy only what you keep, with every file checked afterwards",
+        "See which clips DaVinci Resolve uses, move the unused ones to the Trash and the next clip opens by itself",
+        "Put new footage in a bin of the open Resolve project, named with the date",
+        "A second copy to another disk, a folder per card (SD 5), and updates by themselves"
+      ]
+    },
+    "nl": {
+      "title": "De eerste Rushes",
+      "new": [
+        "Steek een kaart in met je schijf verbonden en Rushes herkent allebei en vraagt wat te doen",
+        "Bekijk eerst alles op de kaart en kopieer alleen wat je behoudt, met daarna elk bestand gecontroleerd",
+        "Zie welke clips DaVinci Resolve gebruikt, zet de ongebruikte in de prullenbak en de volgende clip opent vanzelf",
+        "Zet nieuw beeld in een bin van het geopende Resolve-project, met de datum als naam",
+        "Een tweede kopie naar een andere schijf, een map per kaart (SD 5) en updates die vanzelf komen"
+      ]
+    }
+  }
+]

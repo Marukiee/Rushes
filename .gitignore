@@ -1,0 +1,12 @@
+.build/
+dist/
+.swiftpm/
+*.p12
+*.password
+*.pem
+*.sqlite
+.env
+.DS_Store
+.claude/
+.idea/
+.vscode/

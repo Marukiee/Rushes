@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    name: Build and check
+    # Pinned: the app needs the macOS 26 SDK for Liquid Glass.
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build the app
+        run: swift build -c debug --product Rushes
+
+      # Swift Testing and XCTest need a full Xcode, so the checks are a plain program.
+      - name: Run the checks
+        run: swift run RushesChecks
+
+      - name: The script that talks to Resolve compiles
+        run: python3 -m py_compile Resources/resolve_bridge.py
+
+      - name: Every text in the app has a translation
+        run: python3 scripts/check-strings.py
