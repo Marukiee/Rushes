@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import RushesKit
+import ServiceManagement
 
 enum AppPage: Hashable {
     case overview, review, library, history, resolve
@@ -136,6 +137,11 @@ final class AppModel {
         started = true
         ledger.markInterrupted()
         history = ledger.imports()
+        // An app that has to see a card the moment it goes in has to be running. The first run of the real app asks to start at login.
+        if !AppIdentity.isDevelopmentBuild, !Prefs.defaults.bool(forKey: "launchAtLoginAsked") {
+            Prefs.defaults.set(true, forKey: "launchAtLoginAsked")
+            try? SMAppService.mainApp.register()
+        }
         Notifier.shared.onAction = { [weak self] action, info in self?.handleNotification(action: action, info: info) }
         Notifier.shared.setUp()
         watcher.onChange = { [weak self] in self?.refreshVolumes() }

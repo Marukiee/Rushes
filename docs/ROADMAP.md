@@ -20,6 +20,7 @@ Wat er nog kan komen. Nieuwe wensen komen hier eerst.
 
 ## Gedaan in 0.1.0
 
-Herkenning van kaart en schijf met een zwevend kaartje, bekijken met suggesties en LUT, kopiëren met controle en tweede kopie,
+Systeemzijbalk en werkbalk in Liquid Glass, hover-skimmen van clips,
+herkenning van kaart en schijf met een zwevend kaartje, bekijken met suggesties en LUT, kopiëren met controle en tweede kopie,
 `SD n`-mappen, bibliotheek met Resolve-gebruik, opruimen met prullenbak en ongedaan, bins met datum, timeline, hernoemen met
 relink, integriteitscontrole, geschiedenis met grafiek, menubalk, updates.

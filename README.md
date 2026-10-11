@@ -11,7 +11,7 @@ Made for a Sony camera and a big external SSD, but nothing is tied to either.
 **Recognises a card and your disk.** A small glass card appears in the corner of the screen: "SD 5 and 4TB SSD are in,
 212 new, 96 GB". You choose to look through it first (the default) or to copy everything at once. Both can be set.
 
-**Looks through a card quickly.** Thumbnails you can scrub with the pointer, a big player with J K L and frame
+**Looks through a card quickly.** Thumbnails you skim with the pointer, frame by frame and at the exact spot of the pointer like in DaVinci (hold still and the clip plays on), a big player with J K L and frame
 stepping, the camera's own LUT on log footage, stars, and Keep or Leave out per clip. Black or covered clips, very short
 clips, out of focus photos and near copies in a burst are suggested for leaving out. Only what you keep is copied.
 

@@ -48,6 +48,24 @@ indigo en roze. Groen is behouden, rood is overslaan, oranje is een suggestie.
 **Consistentie:** zelfde vlak, maat, vorm, hoverlabel en uitlijning als de buren. Kijk eerst welk onderdeel op dezelfde pagina hetzelfde
 doet en hergebruik dat.
 
+## Designregels (Liquid Glass, macOS 26)
+
+De app houdt zich aan Apple's regels voor de nieuwe look. Wie iets toevoegt doet dat ook.
+
+- **Glas is voor de bediening, niet voor de inhoud.** Werkbalk, zijbalk, zwevende balken (importbalk, afspeelbalk over een video, het
+  kaartje in de hoek) zijn glas. Kaarten, rijen, koppen en het raster staan op gewone vlakken (`surface`, `.regularMaterial` voor een
+  vastgeplakte kop). Nooit glas op glas: binnen een glazen balk staan platte knoppen.
+- **Systeemonderdelen waar het kan.** `List` als zijbalk (de SD-mappen zijn rijen onder Bibliotheek), `.toolbar` met `ToolbarItemGroup` en
+  `ToolbarSpacer`, `navigationTitle` en `navigationSubtitle`, `.bordered`/`.borderedProminent` voor knoppen in de inhoud. Zelf getekend is
+  alleen wat het systeem niet heeft: `GlassSegmented` (glazen keuzebalk met een lens die schuift), de hover-speler, de verdictknoppen.
+- **Eén raster.** Alle maten komen uit `Space` (4, 8, 12, 16, 24) en de hoeken uit `Metrics` (concentrisch). Kleuren zijn semantisch
+  (`primary`, `secondary`), het enige merk is indigo als accent en roos voor ruimte die vrij kan. Kleur betekent iets: groen behouden,
+  rood overslaan, oranje suggestie. Tekst en pictogrammen in de merktinten gaan via `Palette.accent` en `Palette.roseInk`, die in licht en
+  donker leesbaar zijn.
+- **Geen lege ruimte.** De kolom naast het raster is boven en onder gevuld: beeld, keuzebalk, details, "Hierna". Een knop is nooit
+  afgekapt (`ActionButton` heeft zijn natuurlijke breedte, rijen gaan door of staan onder elkaar via `ButtonRow`).
+- **Echte screenshots** met `scripts/screenshot.sh` (alleen het eigen venster, via `screencapture -l`). Kijk altijd in licht én donker.
+
 ## Techniek
 
 - Bundle-id `nl.markmaaktmedia.Rushes` (debug: `.Rushes.dev`, data in `Application Support/Rushes-Dev`). Minimaal macOS 26, arm64.

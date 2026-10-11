@@ -60,6 +60,9 @@ final class ReviewModel {
 
     var selection: Set<String> = []
     var focusID: String?
+    /// False until the person picks something, so the one in view follows the order as it settles (dates are read after the
+    /// first look at the list) instead of staying on whatever happened to come first.
+    private var userChose = false
     private(set) var visible: [MediaItem] = []
     private(set) var sections: [ReviewSection] = []
     private(set) var undoStack: [UndoStep] = []
@@ -157,10 +160,14 @@ final class ReviewModel {
         }
         selection = selection.filter { id in visible.contains { $0.id == id } }
         if let focusID, !visible.contains(where: { $0.id == focusID }) { self.focusID = nil }
-        if focusID == nil, let first = visible.first { focus(first.id) }
+        if !userChose, let first = visible.first, focusID != first.id {
+            selection = [first.id]
+            focusID = first.id
+        }
     }
 
     func focus(_ id: String?, extend: Bool = false, toggle: Bool = false) {
+        userChose = true
         guard let id else { focusID = nil; selection = []; return }
         if extend, let anchor = focusID, let a = visible.firstIndex(where: { $0.id == anchor }),
            let b = visible.firstIndex(where: { $0.id == id }) {
