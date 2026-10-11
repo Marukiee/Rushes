@@ -132,6 +132,7 @@ struct Sidebar: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: Space.s) {
                 UpdateBanner(compact: true, fromBottom: true)
+                ForEach(app.sessions) { session in CardFooter(session: session) }
                 DiskFooter()
             }
             .padding(Space.m)
@@ -144,24 +145,77 @@ struct Sidebar: View {
     }
 }
 
+/// A card in the Mac, at the foot of the sidebar above the disk: how full it is, and how much of that is video and how much photos.
+private struct CardFooter: View {
+    var session: CardSession
+
+    var body: some View {
+        let volume = session.volume
+        let items = session.scan?.items ?? []
+        let video = items.filter { $0.kind == .video }.reduce(UInt64(0)) { $0 + $1.totalBytes }
+        let photo = items.filter { $0.kind == .photo }.reduce(UInt64(0)) { $0 + $1.totalBytes }
+        // What the card holds besides the clips it was read for: the camera's own files, and anything else.
+        let other = volume.used > video + photo ? volume.used - video - photo : 0
+        VStack(alignment: .leading, spacing: Space.s) {
+            HStack(spacing: Space.s) {
+                Image(systemName: "sdcard.fill")
+                    .font(.system(size: 15))
+                    .foregroundStyle(Palette.accent)
+                    .frame(width: 22)
+                Text(volume.name).font(.callout.weight(.medium)).lineLimit(1)
+            }
+            SegmentedStorageBar(capacity: volume.capacity, parts: [
+                .init(id: "video", bytes: session.phase == .ready ? video : volume.used, color: Palette.indigo),
+                .init(id: "photo", bytes: photo, color: Palette.rose),
+                .init(id: "other", bytes: session.phase == .ready ? other : 0, color: Color.primary.opacity(0.32)),
+            ])
+            if session.phase == .ready {
+                VStack(spacing: 3) {
+                    legend("Video", bytes: video, color: Palette.indigo)
+                    legend("Photos", bytes: photo, color: Palette.rose)
+                    if other > 100 << 20 { legend("Other", bytes: other, color: Color.primary.opacity(0.32)) }
+                    legend("Free", bytes: volume.available, color: Color.primary.opacity(0.16))
+                }
+            } else {
+                Text("Reading what is on it...").font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .padding(Space.m)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .surface(radius: Metrics.card)
+    }
+
+    /// A dot in the colour of the bar, what it stands for, and how much, with the amounts in one column on the right.
+    private func legend(_ title: LocalizedStringKey, bytes: UInt64, color: Color) -> some View {
+        HStack(spacing: 6) {
+            Circle().fill(color).frame(width: 8, height: 8)
+            Text(title).font(.caption).foregroundStyle(.secondary)
+            Spacer(minLength: 4)
+            Text(Format.bytes(bytes)).font(.caption.weight(.medium).monospacedDigit())
+        }
+    }
+}
+
 /// The disk at the foot of the sidebar: whether it is there, and how full it is.
 private struct DiskFooter: View {
     @Environment(AppModel.self) private var app
 
     var body: some View {
-        HStack(alignment: .top, spacing: Space.m) {
-            Image(systemName: "externaldrive.fill")
-                .font(.system(size: 15))
-                .foregroundStyle(app.destination == nil ? Color.secondary : Palette.accent)
-                .frame(width: 22)
-            if let disk = app.destination {
-                VStack(alignment: .leading, spacing: Space.xs) {
+        VStack(alignment: .leading, spacing: Space.s) {
+            HStack(spacing: Space.s) {
+                Image(systemName: "externaldrive.fill")
+                    .font(.system(size: 15))
+                    .foregroundStyle(app.destination == nil ? Color.secondary : Palette.accent)
+                    .frame(width: 22)
+                if let disk = app.destination {
                     Text(disk.name).font(.callout.weight(.medium)).lineLimit(1)
-                    StorageBar(capacity: disk.capacity, used: disk.used, reclaimable: app.library.reclaimableBytes)
-                    Text("\(Format.bytes(disk.available)) free").font(.caption).foregroundStyle(.secondary)
+                } else {
+                    Text("Disk not connected").font(.callout).foregroundStyle(.secondary)
                 }
-            } else {
-                Text("Disk not connected").font(.callout).foregroundStyle(.secondary)
+            }
+            if let disk = app.destination {
+                StorageBar(capacity: disk.capacity, used: disk.used, reclaimable: app.library.reclaimableBytes)
+                Text("\(Format.bytes(disk.available)) free").font(.caption).foregroundStyle(.secondary)
             }
         }
         .padding(Space.m)

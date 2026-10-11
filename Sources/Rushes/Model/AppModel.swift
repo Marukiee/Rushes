@@ -158,8 +158,9 @@ final class AppModel {
 
     private func mountedVolumes() -> [VolumeInfo] {
         var found = Volumes.mounted()
-        // Development: a folder can stand in for a card and another for the disk.
+        // Development: a folder can stand in for a card and another for the disk, and then the real disks stay out of it.
         let environment = ProcessInfo.processInfo.environment
+        if environment["RUSHES_DEBUG_CARD"]?.isEmpty == false || environment["RUSHES_DEBUG_DEST"]?.isEmpty == false { found = [] }
         if let path = environment["RUSHES_DEBUG_CARD"], !path.isEmpty {
             found.append(Self.fake(path: path, name: "NO NAME", uuid: "debug-card", capacity: 128 << 30, removable: true))
         }

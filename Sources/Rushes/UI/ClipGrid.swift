@@ -185,7 +185,7 @@ struct ClipCell: View {
                 hovering = true
                 pointerX = point.x
                 if item.kind == .video {
-                    preview.hover(item, root: model.root, at: Double(point.x / max(width, 1)), knownDuration: model.metadata[item.id]?.duration)
+                    preview.hover(item, root: model.root, at: Double(point.x / max(width, 1)), knownDuration: model.metadata[item.id]?.duration, look: model.look(for: item))
                 }
             case .ended:
                 hovering = false
@@ -193,8 +193,8 @@ struct ClipCell: View {
                 preview.end(item.id)
             }
         }
-        .task(id: item.id) {
-            image = await Thumbnailer.shared.image(for: item, root: model.root, maxPixel: 480)
+        .task(id: item.id + Prefs.lutMode.rawValue) {
+            image = await Thumbnailer.shared.image(for: item, root: model.root, maxPixel: 480, look: Prefs.lutMode.look)
         }
         .help(item.name)
     }
@@ -260,10 +260,9 @@ struct ClipCell: View {
                 .opacity(item.kind == .video && preview.activeID == item.id ? 0 : 1)
                 Spacer(minLength: 0)
                 if let rating = model.ratings[item.id], rating > 0 {
-                    HStack(spacing: 1) {
-                        ForEach(0 ..< rating, id: \.self) { _ in Image(systemName: "star.fill").font(.system(size: 8)) }
-                    }
-                    .foregroundStyle(VerdictStyle.hint)
+                    Text(String(repeating: "\u{2605}", count: rating))
+                        .font(.system(size: 10))
+                        .foregroundStyle(VerdictStyle.hint)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 3)
                     .background(.black.opacity(0.55), in: .capsule)

@@ -227,6 +227,8 @@ struct Chip: View {
     let text: String
     var symbol: String?
     var tint: Color = .secondary
+    /// Without a tinted pill of its own, for a chip that sits on glass: a pill in a pill is one pill too many.
+    var plain = false
 
     var body: some View {
         HStack(spacing: 4) {
@@ -236,7 +238,7 @@ struct Chip: View {
         .foregroundStyle(tint)
         .padding(.horizontal, 8)
         .padding(.vertical, 3)
-        .background(tint.opacity(0.14), in: .capsule)
+        .background { if !plain { Capsule().fill(tint.opacity(0.14)) } }
     }
 }
 
@@ -400,8 +402,38 @@ struct StorageBar: View {
                 }
             }
         }
-        .frame(height: 10)
+        .frame(height: 12)
         .animation(.rushes, value: used)
+    }
+}
+
+/// A storage bar in parts: each part a share of the whole, with a hair of space between, and the rest left empty.
+struct SegmentedStorageBar: View {
+    struct Part: Identifiable {
+        let id: String
+        let bytes: UInt64
+        let color: Color
+    }
+
+    let capacity: UInt64
+    let parts: [Part]
+
+    var body: some View {
+        GeometryReader { proxy in
+            let total = Double(max(capacity, 1))
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.primary.opacity(0.08))
+                HStack(spacing: 2) {
+                    ForEach(parts.filter { $0.bytes > 0 }) { part in
+                        Rectangle().fill(part.color.gradient)
+                            .frame(width: max(5, proxy.size.width * min(1, Double(part.bytes) / total)))
+                    }
+                }
+                .clipShape(Capsule())
+            }
+        }
+        .frame(height: 12)
+        .animation(.rushes, value: parts.map(\.bytes))
     }
 }
 

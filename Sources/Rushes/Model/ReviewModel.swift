@@ -14,6 +14,12 @@ enum ReviewStateFilter: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+/// Which star ratings to show: all, the ones without stars, or from some number of stars up.
+enum ReviewRatingFilter: Hashable {
+    case any, unrated
+    case atLeast(Int)
+}
+
 struct ReviewSection: Identifiable {
     let id: String
     let day: Date
@@ -54,6 +60,7 @@ final class ReviewModel {
 
     var kindFilter: ReviewKindFilter = .all
     var stateFilter: ReviewStateFilter = .all
+    var ratingFilter: ReviewRatingFilter = .any
     var showKnown = false
     /// Set by the grid, so the up and down keys move by a row.
     var gridColumns = 3
@@ -138,6 +145,12 @@ final class ReviewModel {
             case .video: if item.kind != .video { return false }
             case .photo: if item.kind != .photo { return false }
             }
+            let stars = ratings[item.id] ?? 0
+            switch ratingFilter {
+            case .any: break
+            case .unrated: if stars > 0 { return false }
+            case let .atLeast(minimum): if stars < minimum { return false }
+            }
             switch stateFilter {
             case .all: return true
             case .undecided: return verdict(of: item) == .undecided
@@ -160,7 +173,8 @@ final class ReviewModel {
         }
         selection = selection.filter { id in visible.contains { $0.id == id } }
         if let focusID, !visible.contains(where: { $0.id == focusID }) { self.focusID = nil }
-        if !userChose, let first = visible.first, focusID != first.id {
+        if let first = visible.first, (!userChose && focusID != first.id) || focusID == nil {
+            // A filter that takes away the clip in view lands on the first of what is left, so the picture is never empty.
             selection = [first.id]
             focusID = first.id
         }
@@ -413,6 +427,12 @@ final class ReviewModel {
     // MARK: Paths
 
     func url(of item: MediaItem) -> URL { root.appendingPathComponent(item.primary.rel) }
+
+    /// The look to play an original log clip with in a thumbnail, once the notes of the camera are known. Nil for a clip with a proxy.
+    func look(for item: MediaItem) -> CubeLUT? {
+        guard item.kind == .video, item.companion(.proxy) == nil, let meta = metadata[item.id] else { return nil }
+        return Look.lut(for: meta, root: root, mode: Prefs.lutMode.look)
+    }
 
     /// The camera's own LUT when the clip names one and it is on the card or disk, found below the root.
     func lutURL(for item: MediaItem) -> URL? {

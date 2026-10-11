@@ -75,6 +75,8 @@ struct ViewerPanel: View {
                 switch item.kind {
                 case .video:
                     PlayerSurface(player: player.player)
+                    // A click on the picture plays or pauses it, like in any player, and not only the button in the bar.
+                    Color.clear.contentShape(Rectangle()).onTapGesture { player.togglePlay() }
                     if let failed = player.failed {
                         Text(failed).font(.callout).foregroundStyle(.white.opacity(0.7)).padding()
                     }
@@ -107,40 +109,22 @@ struct ViewerPanel: View {
         .animation(.rushesBouncy, value: flash)
     }
 
+    /// What stands over the picture: what the app suggests and whether a project uses the clip. The name and the details of the file are
+    /// not drawn over the picture (they covered it), they stand at the top of the card under it.
     private func topBar(_ item: MediaItem) -> some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(item.name).font(.callout.weight(.semibold)).foregroundStyle(.white)
-                Text(subtitle(for: item)).font(.caption).foregroundStyle(.white.opacity(0.7))
+        VStack(alignment: .trailing, spacing: 6) {
+            if let suggestion = model.suggestions[item.id] {
+                Chip(text: suggestion.text, symbol: suggestion.symbol, tint: VerdictStyle.hint, plain: true)
+                    .padding(.horizontal, 4).padding(.vertical, 3).rushesVideoGlass(.capsule)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .rushesVideoGlass(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            Spacer(minLength: 8)
-            VStack(alignment: .trailing, spacing: 6) {
-                if let suggestion = model.suggestions[item.id] {
-                    Chip(text: suggestion.text, symbol: suggestion.symbol, tint: VerdictStyle.hint)
-                        .padding(4).rushesVideoGlass(.capsule)
-                }
-                if model.mode == .library, let usage = model.usage[item.id] {
-                    let badge = usage.badge
-                    Chip(text: badge.text, symbol: badge.symbol, tint: badge.color)
-                        .padding(4).rushesVideoGlass(.capsule)
-                }
+            if model.mode == .library, let usage = model.usage[item.id] {
+                let badge = usage.badge
+                Chip(text: badge.text, symbol: badge.symbol, tint: badge.color, plain: true)
+                    .padding(.horizontal, 4).padding(.vertical, 3).rushesVideoGlass(.capsule)
             }
         }
         .padding(12)
-        .frame(maxHeight: .infinity, alignment: .top)
-    }
-
-    private func subtitle(for item: MediaItem) -> String {
-        var parts: [String] = []
-        let meta = model.metadata[item.id]
-        parts.append(model.date(of: item).formatted(date: .abbreviated, time: .shortened))
-        if let resolution = meta?.resolution { parts.append(resolution) }
-        if let fps = meta?.frameRateText, item.kind == .video { parts.append(fps) }
-        parts.append(Format.bytes(item.totalBytes))
-        return parts.joined(separator: "  ·  ")
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
     }
 
     // MARK: Loading
@@ -234,6 +218,9 @@ struct VerdictBar: View {
     let onKeep: () -> Void
     let onSkip: () -> Void
 
+    /// What every button in the row holds at least, so Undo is as tall as the keys with a key cap in them.
+    private static let contentHeight: CGFloat = 26
+
     var body: some View {
         ViewThatFits(in: .horizontal) {
             bar(words: true, keys: true)
@@ -248,7 +235,7 @@ struct VerdictBar: View {
         return GlassEffectContainer(spacing: Space.m) {
             HStack(spacing: Space.m) {
                 Button { model.undo() } label: {
-                    Label("Undo", systemImage: "arrow.uturn.backward").labelStyle(.iconOnly).frame(width: 18)
+                    Label("Undo", systemImage: "arrow.uturn.backward").labelStyle(.iconOnly).frame(width: 18, height: Self.contentHeight)
                 }
                 .buttonStyle(.glass)
                 .controlSize(.large)
@@ -279,7 +266,7 @@ struct VerdictBar: View {
             }
             .font(.callout.weight(.semibold))
             .fixedSize()
-            .frame(maxWidth: words ? .infinity : nil)
+            .frame(maxWidth: words ? .infinity : nil, minHeight: Self.contentHeight)
             .padding(.horizontal, words ? Space.xs : Space.s)
         }
         .buttonStyle(.glassProminent)
@@ -403,7 +390,7 @@ private struct MiniThumb: View {
         }
         .buttonStyle(.bouncy)
         .frame(maxWidth: .infinity)
-        .task(id: item.id) { image = await Thumbnailer.shared.image(for: item, root: model.root, maxPixel: 240) }
+        .task(id: item.id) { image = await Thumbnailer.shared.image(for: item, root: model.root, maxPixel: 240, look: Prefs.lutMode.look) }
         .help(item.name)
     }
 }

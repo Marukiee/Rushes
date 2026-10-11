@@ -17,6 +17,8 @@ enum LUTMode: String, CaseIterable, Identifiable {
     case off, auto, builtIn
 
     var id: String { rawValue }
+
+    var look: LookMode { LookMode(rawValue: rawValue) ?? .off }
 }
 
 /// Every setting, by key. Views use these keys with `@AppStorage`; everything else reads through `Prefs`, at the
@@ -89,7 +91,7 @@ enum Prefs {
             PrefKey.finderTags: false,
             PrefKey.suggestionsEnabled: true,
             PrefKey.shortClipSeconds: 1.0,
-            PrefKey.blurRatio: 0.35,
+            PrefKey.blurRatio: 0.2,
             PrefKey.photosInSavings: false,
             PrefKey.resolveEnabled: true,
             PrefKey.resolveAutoScan: true,

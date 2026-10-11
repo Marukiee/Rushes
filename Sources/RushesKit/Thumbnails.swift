@@ -25,15 +25,17 @@ public actor Thumbnailer {
         memory.countLimit = 600
     }
 
-    public func image(for item: MediaItem, root: URL, maxPixel: Int, at fraction: Double = 0.12) async -> CGImage? {
-        let key = cacheKey(item: item, root: root, maxPixel: maxPixel, fraction: fraction)
+    public func image(for item: MediaItem, root: URL, maxPixel: Int, at fraction: Double = 0.12, look: LookMode = .off) async -> CGImage? {
+        let key = cacheKey(item: item, root: root, maxPixel: maxPixel, fraction: fraction) + (look == .off ? "" : "-look-\(look.rawValue)")
         if let hit = memory.object(forKey: key as NSString) { return hit.image }
         let file = directory.appendingPathComponent(key + ".jpg")
         if let cached = Self.decode(file, maxPixel: maxPixel) {
             memory.setObject(CGImageBox(cached), forKey: key as NSString)
             return cached
         }
-        guard let made = await render(item: item, root: root, maxPixel: maxPixel, fraction: fraction) else { return nil }
+        guard var made = await render(item: item, root: root, maxPixel: maxPixel, fraction: fraction) else { return nil }
+        // The original of a log clip is flat, so it gets the look of the camera on it. A proxy has it already.
+        if let lut = Look.lut(for: item, root: root, mode: look), let looked = Look.applying(lut, to: made) { made = looked }
         Self.write(made, to: file)
         memory.setObject(CGImageBox(made), forKey: key as NSString)
         return made

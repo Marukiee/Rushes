@@ -5,7 +5,7 @@ import SwiftUI
 /// That is how the interface gets checked without screen recording. Glass draws as flat colour in these pictures, the
 /// layout is right.
 ///
-/// `RUSHES_DEBUG_PAGE=overview|review|library|history|resolve` opens that page, `RUSHES_DEBUG_SETTINGS=1` the settings,
+/// `RUSHES_DEBUG_PAGE=overview|review|library|history|resolve` opens that page, `RUSHES_DEBUG_SETTINGS=<section>` the settings,
 /// `RUSHES_DEBUG_PANEL=1` the menu bar panel in a window, `RUSHES_DEBUG_NO_WINDOW=1` closes the window after a while.
 /// `RUSHES_DEBUG_CARD=<folder>` and `RUSHES_DEBUG_DEST=<folder>` make folders stand in for a card and for the disk.
 @MainActor
@@ -45,7 +45,7 @@ enum DebugSupport {
             }
         }
         if variable("RUSHES_DEBUG_SETTINGS") != nil {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil) }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { showSettingsWindow() }
         }
         if variable("RUSHES_DEBUG_PANEL") != nil {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { showPanelWindow() }
@@ -55,6 +55,24 @@ enum DebugSupport {
                 for window in NSApp.windows where window.isVisible && window.identifier?.rawValue.contains("main") == true { window.close() }
             }
         }
+    }
+
+    /// `RUSHES_DEBUG_SETTINGS=<section>` opens the settings on that section (general, disks, reviewing, library, davinci, updates, about).
+    static func initialSettingsSection() -> SettingsSection? {
+        variable("RUSHES_DEBUG_SETTINGS").flatMap(SettingsSection.init(rawValue:))
+    }
+
+    private static var settingsWindow: NSWindow?
+
+    /// The settings in a window of their own, so a screenshot can be made without reaching the system's Settings scene.
+    private static func showSettingsWindow() {
+        let host = NSHostingView(rootView: SettingsView().environment(AppModel.shared))
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 780, height: 620), styleMask: [.titled, .closable, .fullSizeContentView], backing: .buffered, defer: false)
+        window.contentView = host
+        window.isReleasedWhenClosed = false
+        window.center()
+        window.makeKeyAndOrderFront(nil)
+        settingsWindow = window
     }
 
     /// Called when the main window has come up, so a page can be chosen without clicking.
@@ -97,7 +115,17 @@ enum DebugSupport {
                 return
             }
             let item = review.visible[index]
-            HoverPreview.shared.hover(item, root: review.root, at: fraction, knownDuration: review.metadata[item.id]?.duration)
+            HoverPreview.shared.hover(item, root: review.root, at: fraction, knownDuration: review.metadata[item.id]?.duration, look: review.look(for: item))
+        case "rate":
+            // `rate:<index>:<stars>` gives a clip stars.
+            guard let review, parts.count > 2, let index = Int(parts[1]), let stars = Int(parts[2]), review.visible.indices.contains(index) else { return }
+            review.focus(review.visible[index].id)
+            review.rate(stars)
+        case "rating":
+            // `rating:any`, `rating:unrated` or `rating:<stars>` for that many stars and more.
+            guard let review, parts.count > 1 else { return }
+            review.ratingFilter = parts[1] == "any" ? .any : (parts[1] == "unrated" ? .unrated : .atLeast(Int(parts[1]) ?? 1))
+            review.refresh()
         case "wait":
             try? await Task.sleep(for: .seconds(Double(parts.last ?? "1") ?? 1))
         case "import":

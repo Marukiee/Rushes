@@ -210,6 +210,19 @@ enum LedgerTests {
 }
 
 enum MiscTests {
+    static func theSlotOfAMacIsStillACard() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("rushes-slot-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder.appendingPathComponent("DCIM"), withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        func volume(builtIn: Bool, removable: Bool) -> VolumeInfo {
+            VolumeInfo(url: folder, name: "SD", uuid: "x", capacity: 256 << 30, available: 100 << 30, isRemovable: removable,
+                       isEjectable: removable, isInternal: builtIn, isReadOnly: false, format: "ExFAT")
+        }
+        expect(volume(builtIn: true, removable: true).looksLikeCard, "the card slot of a Mac reports internal")
+        expect(volume(builtIn: false, removable: true).looksLikeCard)
+        expect(!volume(builtIn: true, removable: false).looksLikeCard, "a fixed internal disk is never a card")
+    }
+
     static func cardNames() {
         expect(CardNaming.nextNumber(ledgerHighest: 2, existingFolders: ["SD 3 Zweden", "SD 4", "Backups"]) == 5)
         expect(CardNaming.folderName(number: 5, name: "Zweden: dag/1") == "SD 5 Zweden dag 1")
@@ -265,5 +278,23 @@ enum MiscTests {
         expect(result["p2"] == .nearDuplicate(of: "p1"))
         expect(result["p1"] == nil)
         expect(result["p3"] == nil)
+
+        // A run of ordinary shots with one that is far softer than the ones around it, and one that is only a bit softer.
+        func shot(_ id: String, _ sharpness: Double, at seconds: Double) -> SuggestionEngine.Input {
+            var analysis = ClipAnalysis()
+            analysis.sharpness = sharpness
+            analysis.hash = UInt64(abs(id.hashValue)) | 0x5555_0000_0000_0000
+            return SuggestionEngine.Input(id: id, kind: .photo, date: now.addingTimeInterval(seconds), duration: nil, analysis: analysis)
+        }
+        var run = (0 ..< 9).map { shot("a\($0)", 100 + Double($0), at: Double($0) * 60) }
+        run.append(shot("far", 8, at: 600))
+        run.append(shot("bit", 60, at: 660))
+        let blur = SuggestionEngine.evaluate(run, settings: SuggestionSettings())
+        expect(blur["far"] == .blurry, "much softer than its neighbours")
+        expect(blur["bit"] == nil, "a bit softer is not out of focus")
+        expect(blur["a3"] == nil)
+        // Three photos are too few to tell what is normal.
+        let few = SuggestionEngine.evaluate(Array(run.prefix(3)) + [shot("soft", 5, at: 700)], settings: SuggestionSettings())
+        expect(few["soft"] == nil, "not enough shots around it to judge")
     }
 }

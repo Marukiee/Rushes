@@ -1,5 +1,46 @@
 [
   {
+    "version": "0.1.2",
+    "date": "2026-10-11",
+    "highlight": false,
+    "en": {
+      "title": "Cards in the sidebar, language, ratings",
+      "new": [
+        "The card shows in the sidebar with a bar for video and photos",
+        "Filter clips and photos on star ratings",
+        "Choose English or Dutch in the settings",
+        "Click the picture to play or pause"
+      ],
+      "better": [
+        "Settings look like Tandem's",
+        "Out of focus is judged against the shots around it",
+        "Log clips without a proxy show the look of the camera in the thumbnails"
+      ],
+      "fixed": [
+        "The card slot of a Mac is recognised",
+        "Undo is as tall as the other buttons"
+      ]
+    },
+    "nl": {
+      "title": "Kaarten in de zijbalk, taal, sterren",
+      "new": [
+        "De kaart staat in de zijbalk met een balk voor video en foto's",
+        "Filter clips en foto's op sterren",
+        "Kies Engels of Nederlands in de instellingen",
+        "Klik op het beeld om af te spelen of te pauzeren"
+      ],
+      "better": [
+        "Instellingen zien eruit zoals die van Tandem",
+        "Onscherp wordt vergeleken met de foto's eromheen",
+        "Logclips zonder proxy tonen de look van de camera in de thumbnails"
+      ],
+      "fixed": [
+        "De kaartsleuf van een Mac wordt herkend",
+        "Ongedaan is even hoog als de andere knoppen"
+      ]
+    }
+  },
+  {
     "version": "0.1.1",
     "date": "2026-10-11",
     "highlight": false,

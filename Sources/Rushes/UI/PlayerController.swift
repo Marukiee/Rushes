@@ -72,7 +72,7 @@ final class PlayerController {
 
         var applied: String?
         if useLUT, let lut = lut(from: lutURL, isLog: isLog) {
-            if let composition = try? await Self.composition(for: asset, lut: lut.lut) {
+            if let composition = try? await Look.composition(for: asset, lut: lut.lut) {
                 item.videoComposition = composition
                 applied = lut.name
             }
@@ -133,18 +133,6 @@ final class PlayerController {
         let made = CubeLUT.sLog3Preview()
         builtIn = made
         return made
-    }
-
-    private nonisolated static func composition(for asset: AVAsset, lut: CubeLUT) async throws -> AVVideoComposition {
-        guard let filter = lut.filter() else { throw CocoaError(.featureUnsupported) }
-        let lock = NSLock()
-        return try await AVVideoComposition.videoComposition(with: asset) { request in
-            lock.lock()
-            defer { lock.unlock() }
-            filter.setValue(request.sourceImage.clampedToExtent(), forKey: kCIInputImageKey)
-            let output = filter.outputImage?.cropped(to: request.sourceImage.extent) ?? request.sourceImage
-            request.finish(with: output, context: nil)
-        }
     }
 
     func unload() {

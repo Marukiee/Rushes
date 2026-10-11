@@ -85,6 +85,7 @@ let tests: [(String, () throws -> Void)] = [
     ("ResolveTests.roundTripsThroughJSON", ResolveTests.roundTripsThroughJSON),
     ("ResolveTests.readsTheRealProjects", ResolveTests.readsTheRealProjects),
     ("LedgerTests.remembersFilesCardsAndSkips", LedgerTests.remembersFilesCardsAndSkips),
+    ("MiscTests.theSlotOfAMacIsStillACard", MiscTests.theSlotOfAMacIsStillACard),
     ("MiscTests.cardNames", MiscTests.cardNames),
     ("MiscTests.binNames", MiscTests.binNames),
     ("MiscTests.cubeLUT", MiscTests.cubeLUT),

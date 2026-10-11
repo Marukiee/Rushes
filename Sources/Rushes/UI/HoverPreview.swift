@@ -47,8 +47,8 @@ final class HoverPreview {
     func player(for id: String) -> AVPlayer? { slots.first { $0.id == id }?.player }
 
     /// The pointer is over a clip at this fraction of its width.
-    func hover(_ item: MediaItem, root: URL, at fraction: Double, knownDuration: Double?) {
-        let slot = slotFor(item, root: root, knownDuration: knownDuration)
+    func hover(_ item: MediaItem, root: URL, at fraction: Double, knownDuration: Double?, look: CubeLUT? = nil) {
+        let slot = slotFor(item, root: root, knownDuration: knownDuration, look: look)
         // The one that was active, if there was one, stops where it is.
         if let previous = activeID, previous != item.id { slots.first { $0.id == previous }?.player.pause() }
         activeID = item.id
@@ -67,7 +67,7 @@ final class HoverPreview {
         activeID = nil
     }
 
-    private func slotFor(_ item: MediaItem, root: URL, knownDuration: Double?) -> Slot {
+    private func slotFor(_ item: MediaItem, root: URL, knownDuration: Double?, look: CubeLUT?) -> Slot {
         if let at = slots.firstIndex(where: { $0.id == item.id }) {
             // Most recently used goes last.
             let slot = slots.remove(at: at)
@@ -79,6 +79,10 @@ final class HoverPreview {
         let asset = AVURLAsset(url: source)
         let playerItem = AVPlayerItem(asset: asset)
         playerItem.preferredForwardBufferDuration = 2
+        // The original of a log clip plays with the look on it, like in the viewer. A proxy has it already.
+        if let look, item.companion(.proxy) == nil {
+            Task { if let composition = try? await Look.composition(for: asset, lut: look) { playerItem.videoComposition = composition } }
+        }
         slot.player.replaceCurrentItem(with: playerItem)
         observers[item.id] = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: playerItem, queue: .main) { _ in
             MainActor.assumeIsolated { slot.player.seek(to: .zero) { _ in slot.player.play() } }

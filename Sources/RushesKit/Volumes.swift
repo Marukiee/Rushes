@@ -30,9 +30,10 @@ public struct VolumeInfo: Hashable, Sendable, Identifiable {
     public var id: String { uuid.isEmpty ? url.path : uuid }
     public var used: UInt64 { capacity > available ? capacity - available : 0 }
 
-    /// Looks like the card of a camera: a known camera folder at the top, on something that can be taken out.
+    /// Looks like the card of a camera: a known camera folder at the top, on something that can be taken out. The SD slot built
+    /// into a Mac says it is internal, so internal only counts against a volume that cannot be removed.
     public var looksLikeCard: Bool {
-        guard !isInternal else { return false }
+        guard !isInternal || isRemovable || isEjectable else { return false }
         return Self.cameraMarkers.contains { FileManager.default.fileExists(atPath: url.appendingPathComponent($0).path) }
     }
 

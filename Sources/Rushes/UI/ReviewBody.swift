@@ -85,14 +85,30 @@ private struct StateFilterMenu: View {
                     if model.stateFilter == state { Label(label(state), systemImage: "checkmark") } else { Text(label(state)) }
                 }
             }
+            Divider()
+            Menu("Rating") {
+                ratingButton(.any, title: "Any rating")
+                ratingButton(.unrated, title: "Not rated")
+                Divider()
+                ForEach(1 ... 5, id: \.self) { stars in
+                    ratingButton(.atLeast(stars), title: "\(String(repeating: "\u{2605}", count: stars)) or more")
+                }
+            }
             if model.mode == .card {
                 Divider()
                 Toggle("Show what was copied before", isOn: Binding(get: { model.showKnown }, set: { model.showKnown = $0; model.refresh() }))
             }
         } label: {
-            Label("Filter", systemImage: model.stateFilter == .all ? "line.3.horizontal.decrease" : "line.3.horizontal.decrease.circle.fill")
+            let active = model.stateFilter != .all || model.ratingFilter != .any
+            Label("Filter", systemImage: active ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease")
         }
         .help("Filter")
+    }
+
+    private func ratingButton(_ filter: ReviewRatingFilter, title: LocalizedStringKey) -> some View {
+        Button { model.ratingFilter = filter; model.refresh() } label: {
+            if model.ratingFilter == filter { Label(title, systemImage: "checkmark") } else { Text(title) }
+        }
     }
 
     private var states: [ReviewStateFilter] {
@@ -233,6 +249,12 @@ struct DetailsCard: View {
     var body: some View {
         let meta = model.metadata[item.id]
         VStack(alignment: .leading, spacing: Space.m) {
+            // Which clip it is and when it was shot: this stood over the picture and covered it.
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.name).font(.headline).lineLimit(1).truncationMode(.middle).textSelection(.enabled)
+                Text(model.date(of: item).formatted(date: .complete, time: .shortened)).font(.callout).foregroundStyle(.secondary)
+            }
+            Divider()
             if model.mode == .library, let usage = model.usage[item.id] {
                 UsageList(usage: usage)
                 Divider()
