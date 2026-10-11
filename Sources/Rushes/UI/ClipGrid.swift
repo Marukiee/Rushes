@@ -138,9 +138,13 @@ struct ClipCell: View {
             .overlay {
                 ZStack {
                     if let image {
-                        Image(decorative: image, scale: 1)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
+                        // A picture that fills the cell must not make the cell taller, or the chips along the bottom fall outside it.
+                        Color.clear.overlay {
+                            Image(decorative: image, scale: 1)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        }
+                        .clipped()
                     } else {
                         Image(systemName: item.kind == .video ? "film" : "photo")
                             .font(.title2)
@@ -197,16 +201,22 @@ struct ClipCell: View {
 
     /// The playhead of the skimming: a thin line where the pointer is, with the time it stands for.
     private var skimLine: some View {
-        ZStack(alignment: .leading) {
-            Rectangle().fill(.white.opacity(0.9)).frame(width: 1.5).shadow(radius: 2).offset(x: preview.playhead * width)
-            Text(Format.timecode(preview.seconds))
-                .font(.system(size: 10, weight: .semibold).monospacedDigit())
-                .foregroundStyle(.white)
-                .padding(.horizontal, 5).padding(.vertical, 2)
-                .background(.black.opacity(0.55), in: Capsule())
-                .offset(x: min(max(preview.playhead * width + 6, 4), width - 44), y: 0)
-                .frame(maxHeight: .infinity, alignment: .bottom)
-                .padding(.bottom, 6)
+        GeometryReader { proxy in
+            let x = preview.playhead * proxy.size.width
+            // Beside the line, and on the other side of it when the line is near the right edge.
+            let labelX = x > proxy.size.width - 64 ? max(4, x - 58) : x + 6
+            ZStack(alignment: .topLeading) {
+                Rectangle().fill(.white.opacity(0.9)).frame(width: 1.5, height: proxy.size.height).shadow(radius: 2).offset(x: x - 0.75)
+                Text(Format.timecode(preview.seconds))
+                    .font(.system(size: 10, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(.white)
+                    .fixedSize()
+                    .padding(.horizontal, 5).padding(.vertical, 2)
+                    .background(.black.opacity(0.55), in: Capsule())
+                    .padding(.bottom, 6)
+                    .frame(width: proxy.size.width, height: proxy.size.height, alignment: .bottomLeading)
+                    .offset(x: labelX)
+            }
         }
         .allowsHitTesting(false)
     }
@@ -246,6 +256,8 @@ struct ClipCell: View {
                 .padding(.horizontal, 7)
                 .padding(.vertical, 3)
                 .background(.black.opacity(0.55), in: .capsule)
+                // While the clip is skimmed the time under the line says where it is, so the length steps aside.
+                .opacity(item.kind == .video && preview.activeID == item.id ? 0 : 1)
                 Spacer(minLength: 0)
                 if let rating = model.ratings[item.id], rating > 0 {
                     HStack(spacing: 1) {

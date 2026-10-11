@@ -125,6 +125,7 @@ final class HoverPreview {
     /// When the pointer has been still for a moment the clip plays on from there.
     private func rest(_ slot: Slot) {
         restTask?.cancel()
+        guard !DebugFlags.holdHoverFrame else { return }
         restTask = Task {
             try? await Task.sleep(for: .milliseconds(650))
             guard !Task.isCancelled, activeID == slot.id, !slot.isSeeking else { return }

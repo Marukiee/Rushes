@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.1.1",
+    "date": "2026-10-11",
+    "highlight": false,
+    "en": {
+      "title": "Skimming and clip chips",
+      "fixed": [
+        "The length of a clip and the RAW+JPG label show on every thumbnail again",
+        "Skimming a clip shows the time under the line that follows your pointer"
+      ]
+    },
+    "nl": {
+      "title": "Skimmen en clipchips",
+      "fixed": [
+        "De lengte van een clip en het RAW+JPG-label staan weer op elke thumbnail",
+        "Skimmen toont de tijd onder de lijn die je aanwijzer volgt"
+      ]
+    }
+  },
+  {
     "version": "0.1.0",
     "date": "2026-10-11",
     "highlight": true,

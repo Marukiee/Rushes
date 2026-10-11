@@ -90,6 +90,14 @@ enum DebugSupport {
             case "resolve": model.page = .resolve
             default: model.page = .overview
             }
+        case "hover":
+            // The pointer over a clip: `hover:<index>:<fraction>`.
+            guard let review, parts.count > 2, let index = Int(parts[1]), let fraction = Double(parts[2]), review.visible.indices.contains(index) else {
+                FileHandle.standardError.write(Data("hover: no clip to hover yet\n".utf8))
+                return
+            }
+            let item = review.visible[index]
+            HoverPreview.shared.hover(item, root: review.root, at: fraction, knownDuration: review.metadata[item.id]?.duration)
         case "wait":
             try? await Task.sleep(for: .seconds(Double(parts.last ?? "1") ?? 1))
         case "import":

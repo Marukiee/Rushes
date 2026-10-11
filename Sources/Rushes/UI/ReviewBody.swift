@@ -156,7 +156,7 @@ struct KeyHints: View {
                     hint("← →  ↑ ↓", "Move through the clips")
                     hint("⏎", mode == .library ? "Protect from suggestions" : "Keep")
                     hint("X  ⌫", mode == .library ? "Move to the Trash" : "Leave out")
-                    hint("1 – 5", "Stars")
+                    hint("1-5", "Stars")
                     hint("Space", "Play or pause")
                     hint("J  K  L", "Back, stop, forward (again for faster)")
                     hint(",  .", "One frame back or forward")

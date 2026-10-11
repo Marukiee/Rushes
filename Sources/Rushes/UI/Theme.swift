@@ -360,4 +360,6 @@ private struct RushesButtonStyle: ViewModifier {
 
 enum DebugFlags {
     static let flatGlass = ProcessInfo.processInfo.environment["RUSHES_DEBUG_FLAT_GLASS"] != nil
+    /// A hover preview that stays on the frame under the pointer, so a screenshot shows the same moment every time.
+    static let holdHoverFrame = ProcessInfo.processInfo.environment["RUSHES_DEBUG_HOLD_HOVER"] != nil
 }

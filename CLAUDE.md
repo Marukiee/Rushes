@@ -103,7 +103,7 @@ CI bouwt, tekent, controleert de bundel en publiceert `Rushes-macOS.zip` met `.s
 - `./scripts/build-macos.sh debug` geeft `dist/Rushes Dev.app`. Start die met `open -n` en `--env`, of rechtstreeks voor een logboek.
 - De debug-build leest omgevingsvariabelen (alleen als `RUSHES_DEBUG_DIR` gezet is): `RUSHES_DEBUG_CARD=<map>` en `RUSHES_DEBUG_DEST=<map>`
   laten mappen een kaart en een schijf spelen, `RUSHES_DEBUG_PAGE`, `RUSHES_DEBUG_ACTIONS` (een script als `skip:0,keep:1,import,wait:8,snapshot`),
-  `RUSHES_DEBUG_FLAT_GLASS` (glas als vlak, zodat tekst leesbaar is), `RUSHES_DEBUG_APPEARANCE=dark|light`. SIGUSR1 schrijft PNG's van de vensters.
+  `RUSHES_DEBUG_FLAT_GLASS` (glas als vlak, zodat tekst leesbaar is), `RUSHES_DEBUG_APPEARANCE=dark|light`, `RUSHES_DEBUG_HOLD_HOVER` (een hover-voorbeeld blijft op het beeld onder de aanwijzer staan, zodat een screenshot elke keer hetzelfde moment toont). SIGUSR1 schrijft PNG's van de vensters.
   Echte schermopnames van de Mac mogen niet.
 - Teksten: `python3 scripts/check-strings.py` controleert dat elke tekst in de code een Nederlandse vertaling heeft. De tabel wordt gemaakt met
   `python3 scripts/strings/gen.py scripts/strings` uit `scripts/strings/nl1.py` en `nl2.py` (voegt de %lld- en %@-spelling toe en de %%-spelling).
