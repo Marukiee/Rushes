@@ -6,6 +6,11 @@ enum AppPage: Hashable {
     case overview, review, library, history, resolve
 }
 
+/// What can be chosen in the sidebar. The folders of the library are rows of their own under it.
+enum SidebarItem: Hashable {
+    case overview, card, library, folder(String), history, resolve
+}
+
 /// Opens the window of the app from anywhere. SwiftUI only hands out `openWindow` to a view, so a view parks it here.
 @MainActor
 final class WindowOpener {
@@ -53,6 +58,30 @@ final class AppModel {
     /// Set after a folder was renamed: clips in Resolve may still point at the old name.
     var pendingRelink: RelinkRequest?
     var integrity: IntegrityState?
+
+    var sidebarSelection: SidebarItem {
+        get {
+            switch page {
+            case .overview: .overview
+            case .review: .card
+            case .library: library.selected.map { .folder($0.id) } ?? .library
+            case .history: .history
+            case .resolve: .resolve
+            }
+        }
+        set {
+            switch newValue {
+            case .overview: page = .overview
+            case .card: page = .review
+            case .library: page = .library
+            case let .folder(id):
+                library.selectedID = id
+                page = .library
+            case .history: page = .history
+            case .resolve: page = .resolve
+            }
+        }
+    }
 
     private let watcher = VolumeWatcher()
     private let sleepBlocker = SleepBlocker()

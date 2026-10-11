@@ -182,6 +182,14 @@ final class ReviewModel {
         focus(visible[target].id, extend: extend)
     }
 
+    /// The clips that follow the one in view, for a look ahead.
+    func upcoming(_ count: Int) -> [MediaItem] {
+        guard let index = visible.firstIndex(where: { $0.id == focusID }) else { return Array(visible.prefix(count)) }
+        return Array(visible.dropFirst(index + 1).prefix(count))
+    }
+
+    var focusPosition: Int? { visible.firstIndex(where: { $0.id == focusID }).map { $0 + 1 } }
+
     func moveToNextUndecided() {
         guard let index = visible.firstIndex(where: { $0.id == focusID }) else { return }
         let rest = visible[(index + 1)...] + visible[..<index]

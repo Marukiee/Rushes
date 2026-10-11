@@ -1,107 +1,98 @@
 import RushesKit
 import SwiftUI
 
-/// The part of the review that is the same for a card and for a folder on the disk: filters on top, the grid on the left,
-/// the big picture on the right.
-struct ReviewBody: View {
+/// The part of the review that is the same for a card and for a folder on the disk: the clips on the left, the picture on
+/// the right, the details in the inspector pane of the window. What the person can do is in the toolbar above.
+struct ReviewBody<Banner: View>: View {
     var model: ReviewModel
     var showUsage = false
     var onRequestDelete: (() -> Void)?
+    @ViewBuilder var banner: Banner
 
     var body: some View {
-        VStack(spacing: 12) {
-            FilterBar(model: model)
-            if model.mode == .card { SuggestionBanner(model: model) }
+        VStack(spacing: Space.m) {
+            banner
             GeometryReader { geometry in
-                let gridWidth = max(330, min(geometry.size.width * 0.44, 560))
-                HStack(alignment: .top, spacing: 14) {
-                    Group {
+                let gridWidth = max(340, min(geometry.size.width * 0.34, 480))
+                HStack(alignment: .top, spacing: Space.xl) {
+                    // The choice of what to show floats right over what it filters, in glass, and the list scrolls under it.
+                    ZStack(alignment: .top) {
                         if model.visible.isEmpty {
                             EmptyState(
                                 symbol: model.allItems.isEmpty ? "tray" : "line.3.horizontal.decrease.circle",
                                 title: model.allItems.isEmpty ? "Nothing here" : "Nothing matches",
                                 text: model.allItems.isEmpty ? "There are no clips or photos to look at." : "Change the filter above to see more."
                             )
+                            .padding(.top, 52)
                         } else {
-                            ClipGrid(model: model, showUsage: showUsage)
+                            ClipGrid(model: model, showUsage: showUsage, topInset: 52)
                         }
+                        GlassSegmented(
+                            options: [(.all, "All"), (.video, "Video"), (.photo, "Photos")],
+                            selection: Binding(get: { model.kindFilter }, set: { model.kindFilter = $0; model.refresh() })
+                        )
                     }
                     .frame(width: gridWidth)
-                    .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                     ViewerPanel(model: model, onRequestDelete: onRequestDelete)
-                        .padding(.trailing, 20)
                 }
-                .padding(.leading, 6)
             }
         }
-        .padding(.bottom, 14)
+        .padding(.horizontal, Space.page)
+        .padding(.top, Space.s)
+        .padding(.bottom, Space.l)
     }
 }
 
-private struct FilterBar: View {
+extension ReviewBody where Banner == EmptyView {
+    init(model: ReviewModel, showUsage: Bool = false, onRequestDelete: (() -> Void)? = nil) {
+        self.init(model: model, showUsage: showUsage, onRequestDelete: onRequestDelete) { EmptyView() }
+    }
+}
+
+// MARK: Toolbar
+
+/// What goes in the toolbar of a review: the tools of the view, in one pill at the right. The system draws the glass.
+struct ReviewToolbar: ToolbarContent {
+    var model: ReviewModel
+
+    var body: some ToolbarContent {
+        ToolbarItemGroup(placement: .primaryAction) {
+            StateFilterMenu(model: model)
+            if model.mode == .card { CardMoreMenu(model: model) }
+            KeyHints(mode: model.mode)
+            DetailsToggle()
+        }
+    }
+}
+
+extension ReviewModel {
+    /// What goes under the title: how many the filter shows, and how far the looking has got.
+    var progressText: String {
+        var parts: [String] = []
+        if visible.count != actionableCount { parts.append(String(localized: "\(visible.count) of \(actionableCount)")) }
+        if enriching { parts.append(String(localized: "Looking at \(enrichDone) of \(allItems.count)")) }
+        return parts.joined(separator: "  ·  ")
+    }
+}
+
+private struct StateFilterMenu: View {
     var model: ReviewModel
 
     var body: some View {
-        HStack(spacing: 10) {
-            Picker("Kind", selection: Binding(get: { model.kindFilter }, set: { model.kindFilter = $0; model.refresh() })) {
-                Text("All").tag(ReviewKindFilter.all)
-                Text("Video").tag(ReviewKindFilter.video)
-                Text("Photos").tag(ReviewKindFilter.photo)
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .frame(width: 210)
-
-            Menu {
-                ForEach(states, id: \.self) { state in
-                    Button { model.stateFilter = state; model.refresh() } label: {
-                        if model.stateFilter == state { Label(label(state), systemImage: "checkmark") } else { Text(label(state)) }
-                    }
+        Menu {
+            ForEach(states, id: \.self) { state in
+                Button { model.stateFilter = state; model.refresh() } label: {
+                    if model.stateFilter == state { Label(label(state), systemImage: "checkmark") } else { Text(label(state)) }
                 }
-                if model.mode == .card {
-                    Divider()
-                    Toggle("Show what was copied before", isOn: Binding(get: { model.showKnown }, set: { model.showKnown = $0; model.refresh() }))
-                }
-            } label: {
-                Label(label(model.stateFilter), systemImage: "line.3.horizontal.decrease")
-                    .font(.callout.weight(.medium))
             }
-            .menuStyle(.button)
-            .glassButtonStyle()
-
-            Text("\(model.visible.count) of \(model.actionableCount)")
-                .font(.callout.monospacedDigit())
-                .foregroundStyle(.secondary)
-                .contentTransition(.numericText())
-
-            if model.enriching {
-                HStack(spacing: 6) {
-                    ProgressView().controlSize(.small)
-                    Text("Looking at \(model.enrichDone) of \(model.allItems.count)")
-                        .font(.caption).foregroundStyle(.secondary).monospacedDigit()
-                }
-                .transition(.opacity)
-            }
-            Spacer(minLength: 0)
             if model.mode == .card {
-                Menu {
-                    Button("Leave out all suggestions", systemImage: "wand.and.stars") { model.applySuggestions() }
-                        .disabled(model.counts().suggested == 0)
-                    Button("Keep everything not judged", systemImage: "checkmark.circle") { model.keepAllUndecided() }
-                    Divider()
-                    Button("Clear all choices", systemImage: "arrow.counterclockwise") { model.clearAll() }
-                } label: {
-                    Image(systemName: "ellipsis")
-                }
-                .menuStyle(.button)
-                .glassButtonStyle()
-                .menuIndicator(.hidden)
+                Divider()
+                Toggle("Show what was copied before", isOn: Binding(get: { model.showKnown }, set: { model.showKnown = $0; model.refresh() }))
             }
-            KeyHints(mode: model.mode)
+        } label: {
+            Label("Filter", systemImage: model.stateFilter == .all ? "line.3.horizontal.decrease" : "line.3.horizontal.decrease.circle.fill")
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 4)
-        .animation(.rushes, value: model.enriching)
+        .help("Filter")
     }
 
     private var states: [ReviewStateFilter] {
@@ -123,34 +114,62 @@ private struct FilterBar: View {
     }
 }
 
-private struct KeyHints: View {
+/// The actions that go with a card's review, one menu: leave out the suggestions, keep the rest, start over.
+struct CardMoreMenu: View {
+    var model: ReviewModel
+
+    var body: some View {
+        Menu {
+            Button("Leave out all suggestions", systemImage: "wand.and.stars") { model.applySuggestions() }
+                .disabled(model.counts().suggested == 0)
+            Button("Keep everything not judged", systemImage: "checkmark.circle") { model.keepAllUndecided() }
+            Divider()
+            Button("Clear all choices", systemImage: "arrow.counterclockwise") { model.clearAll() }
+        } label: {
+            Label("More", systemImage: "ellipsis")
+        }
+        .help("More")
+    }
+}
+
+/// Shows or hides the card of details under the picture.
+struct DetailsToggle: View {
+    var body: some View {
+        Button {
+            Prefs.defaults.set(!Prefs.bool(PrefKey.showInspector), forKey: PrefKey.showInspector)
+        } label: {
+            Label("Details", systemImage: "info.circle")
+        }
+        .help("Details (I)")
+    }
+}
+
+struct KeyHints: View {
     let mode: ReviewModel.Mode
     @LocalState private var shown = false
 
     var body: some View {
-        Button { shown.toggle() } label: {
-            Image(systemName: "keyboard")
-        }
-        .glassButtonStyle()
-        .popover(isPresented: $shown) {
-            Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 7) {
-                hint("← →  ↑ ↓", "Move through the clips")
-                hint("⏎", mode == .library ? "Protect from suggestions" : "Keep")
-                hint("X  ⌫", mode == .library ? "Move to the Trash" : "Leave out")
-                hint("1 – 5", "Stars")
-                hint("Space", "Play or pause")
-                hint("J  K  L", "Back, stop, forward (again for faster)")
-                hint(",  .", "One frame back or forward")
-                hint("[  ]", "Five seconds back or forward")
-                hint("Tab", "Next one not judged")
-                hint("Z", "Undo")
-                hint("U", "Clear the choice")
-                hint("M", "Sound on or off")
-                hint("I", "Details on or off")
-                hint("⇧ click, ⌘ click", "Select several")
+        Button { shown.toggle() } label: { Label("Keys", systemImage: "keyboard") }
+            .help("Keys")
+            .popover(isPresented: $shown) {
+                Grid(alignment: .leading, horizontalSpacing: Space.l, verticalSpacing: Space.s) {
+                    hint("← →  ↑ ↓", "Move through the clips")
+                    hint("⏎", mode == .library ? "Protect from suggestions" : "Keep")
+                    hint("X  ⌫", mode == .library ? "Move to the Trash" : "Leave out")
+                    hint("1 – 5", "Stars")
+                    hint("Space", "Play or pause")
+                    hint("J  K  L", "Back, stop, forward (again for faster)")
+                    hint(",  .", "One frame back or forward")
+                    hint("[  ]", "Five seconds back or forward")
+                    hint("Tab", "Next one not judged")
+                    hint("Z", "Undo")
+                    hint("U", "Clear the choice")
+                    hint("M", "Sound on or off")
+                    hint("I", "Details on or off")
+                    hint("⇧ click, ⌘ click", "Select several")
+                }
+                .padding(Space.l)
             }
-            .padding(16)
-        }
     }
 
     private func hint(_ keys: String, _ text: LocalizedStringKey) -> some View {
@@ -161,28 +180,92 @@ private struct KeyHints: View {
     }
 }
 
-private struct SuggestionBanner: View {
+// MARK: Banner
+
+/// One line above the clips that says something about all of them, with the one thing to do about it.
+struct InfoBanner<Actions: View>: View {
+    let symbol: String
+    var tint: Color = Palette.accent
+    let text: String
+    @ViewBuilder var actions: Actions
+
+    var body: some View {
+        HStack(spacing: Space.m) {
+            Image(systemName: symbol).foregroundStyle(tint).font(.system(size: 15, weight: .semibold))
+            Text(text).font(.callout).lineLimit(2)
+            Spacer(minLength: Space.m)
+            actions
+        }
+        .padding(.horizontal, Space.l)
+        .padding(.vertical, Space.m)
+        .surface(radius: Metrics.card)
+    }
+}
+
+struct SuggestionBanner: View {
     var model: ReviewModel
 
     var body: some View {
         let suggested = model.counts().suggested
         if suggested > 0 {
-            HStack(spacing: 12) {
-                Image(systemName: "wand.and.stars").foregroundStyle(VerdictStyle.hint)
-                Text("\(suggested) look unneeded: black, very short, out of focus or near copies")
-                    .font(.callout)
-                Spacer(minLength: 8)
+            InfoBanner(
+                symbol: "wand.and.stars", tint: VerdictStyle.hint,
+                text: String(localized: "\(suggested) look unneeded: black, very short, out of focus or near copies")
+            ) {
                 Button("Show") { model.stateFilter = .suggested; model.refresh() }
-                    .glassButtonStyle()
+                    .buttonStyle(.bordered)
                 Button("Leave them out") { model.applySuggestions() }
-                    .prominentButtonStyle()
+                    .buttonStyle(.borderedProminent)
                     .tint(VerdictStyle.hint)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .rushesGlass(.capsule)
-            .padding(.horizontal, 20)
             .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+}
+
+// MARK: Details
+
+/// What is known about the clip in view: the usage in DaVinci Resolve first, then the camera, in two columns so it stays short.
+struct DetailsCard: View {
+    var model: ReviewModel
+    let item: MediaItem
+
+    var body: some View {
+        let meta = model.metadata[item.id]
+        VStack(alignment: .leading, spacing: Space.m) {
+            if model.mode == .library, let usage = model.usage[item.id] {
+                UsageList(usage: usage)
+                Divider()
+            }
+            LazyVGrid(
+                columns: [GridItem(.flexible(), alignment: .topLeading), GridItem(.flexible(), alignment: .topLeading)],
+                alignment: .leading, spacing: Space.m
+            ) {
+                cell("Camera", meta?.camera)
+                cell("Lens", meta?.lens)
+                cell("Format", [meta?.codec, meta?.resolution, meta?.frameRateText].compactMap { $0 }.joined(separator: " · "))
+                if item.kind == .photo {
+                    cell("Exposure", [meta?.shutter, meta?.aperture.map { "f/\(String(format: "%g", $0))" }, meta?.iso.map { "ISO \($0)" }]
+                        .compactMap { $0 }.joined(separator: " · "))
+                } else {
+                    cell("Picture profile", meta?.gamma)
+                }
+                cell("Size", Format.bytes(item.totalBytes) + (item.kind == .video && meta?.duration != nil ? " · " + Format.duration(meta?.duration) : ""))
+                cell("File", item.primary.rel)
+            }
+        }
+        .padding(Space.l)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .surface(radius: Metrics.card)
+    }
+
+    @ViewBuilder
+    private func cell(_ title: LocalizedStringKey, _ value: String?) -> some View {
+        if let value, !value.isEmpty {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.caption).foregroundStyle(.secondary)
+                Text(value).font(.callout).lineLimit(2).truncationMode(.middle).textSelection(.enabled)
+            }
         }
     }
 }

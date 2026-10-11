@@ -25,23 +25,22 @@ struct LibraryPage: View {
                     title: "No card folders yet",
                     text: "Folders named SD 1, SD 2 and so on show up here. The first card you copy makes the first one."
                 )
-            } else {
-                VStack(spacing: 0) {
-                    FolderStrip()
-                    if let folder = library.selected {
-                        VStack(spacing: 0) {
-                            FolderHeader(
-                                folder: folder,
-                                onCleanup: { confirmCleanup = true },
-                                onRename: { newName = ""; renaming = true }
-                            )
-                            ReviewBody(model: folder.review, showUsage: true) { requestDelete(in: folder) }
-                        }
-                        .id(folder.id)
-                    } else {
-                        EmptyState(symbol: "square.grid.2x2", title: "Choose a folder", text: "Pick one above to look through it.")
-                    }
+            } else if let folder = library.selected {
+                ReviewBody(model: folder.review, showUsage: true, onRequestDelete: { requestDelete(in: folder) }) {
+                    SavingsBanner(folder: folder) { confirmCleanup = true }
                 }
+                .id(folder.id)
+            } else {
+                EmptyState(symbol: "square.grid.2x2", title: "Choose a folder", text: "Pick one in the sidebar to look through it.")
+            }
+        }
+        .navigationTitle(library.selected?.name ?? String(localized: "Library"))
+        .navigationSubtitle(library.selected.map { [subtitle(for: $0), $0.review.progressText].filter { !$0.isEmpty }.joined(separator: "  ·  ") } ?? "")
+        .toolbar {
+            if let folder = library.selected {
+                ReviewToolbar(model: folder.review)
+                ToolbarSpacer(.fixed, placement: .primaryAction)
+                ToolbarItem(placement: .primaryAction) { FolderMenu(folder: folder) { newName = ""; renaming = true } }
             }
         }
         .confirmationDialog(
@@ -76,6 +75,15 @@ struct LibraryPage: View {
         }
     }
 
+    private func subtitle(for folder: LibraryModel.Folder) -> String {
+        var parts = [Format.bytes(folder.totalBytes)]
+        if app.resolve.hasIndex {
+            parts.append(String(localized: "\(Format.bytes(folder.usedBytes)) in projects"))
+            parts.append(String(localized: "\(Format.bytes(folder.reclaimableBytes)) unused"))
+        }
+        return parts.joined(separator: "  ·  ")
+    }
+
     // MARK: Deleting
 
     private func requestDelete(in folder: LibraryModel.Folder) {
@@ -106,160 +114,65 @@ struct LibraryPage: View {
     }
 }
 
-// MARK: Folder list
+// MARK: Banner and menu
 
-/// The folders along the top, with the space that could be freed next to them. A row across leaves the width for the clips.
-private struct FolderStrip: View {
+/// What can be freed in this folder, with the button that does it. Before DaVinci has been read it offers to read it.
+private struct SavingsBanner: View {
     @Environment(AppModel.self) private var app
+    let folder: LibraryModel.Folder
+    let cleanup: () -> Void
 
     var body: some View {
-        let library = app.library
-        HStack(alignment: .top, spacing: 12) {
-            SavingsTile().frame(width: 260)
-            ScrollView(.horizontal) {
-                HStack(alignment: .top, spacing: 8) {
-                    ForEach(library.folders) { folder in
-                        FolderRow(folder: folder, selected: library.selectedID == folder.id) { library.selectedID = folder.id }
-                            .frame(width: 230)
-                    }
-                    if library.isLoading {
-                        HStack(spacing: 8) { ProgressView().controlSize(.small); Text("Reading folders...").font(.caption).foregroundStyle(.secondary) }
-                            .padding(12)
-                    }
-                }
-                .padding(.vertical, 2)
-                .padding(.trailing, 20)
-            }
-            .scrollIndicators(.never)
-        }
-        .padding(.leading, 20)
-        .padding(.top, 8)
-        .padding(.bottom, 4)
-    }
-}
-
-private struct SavingsTile: View {
-    @Environment(AppModel.self) private var app
-
-    var body: some View {
-        let library = app.library
-        VStack(alignment: .leading, spacing: 4) {
-            Text("You can free up").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-            Text(Format.bytes(library.reclaimableBytes))
-                .font(.system(size: 28, weight: .bold, design: .rounded).monospacedDigit())
-                .foregroundStyle(Palette.rose)
-                .contentTransition(.numericText())
-            Text(app.resolve.hasIndex
-                 ? Format.count(library.reclaimableCount, one: String(localized: "clip that no project uses"), other: String(localized: "clips that no project uses"))
-                 : String(localized: "Scan DaVinci Resolve to find out which clips are used"))
-                .font(.caption).foregroundStyle(.secondary).lineLimit(2)
-            HStack(spacing: 6) {
+        if !app.resolve.hasIndex {
+            InfoBanner(symbol: "film.stack", text: String(localized: "Scan DaVinci Resolve to find out which clips are used")) {
                 if app.resolve.isScanning {
-                    ProgressView(value: app.resolve.scanProgress).controlSize(.small)
+                    ProgressView(value: app.resolve.scanProgress).frame(width: 120)
                 } else {
-                    Button { Task { await app.resolve.scan(); app.library.recount(index: app.resolve.index) } } label: {
-                        Label(app.resolve.hasIndex ? "Scan again" : "Scan DaVinci", systemImage: "arrow.triangle.2.circlepath")
-                            .font(.caption.weight(.semibold))
-                            .fixedSize()
-                    }
-                    .glassButtonStyle()
-                    .controlSize(.small)
-                }
-                if app.resolve.hasIndex {
-                    Text(app.resolve.index.scannedAt.formatted(.relative(presentation: .named))).font(.caption2).foregroundStyle(.tertiary).lineLimit(1)
+                    Button("Scan DaVinci") { rescan() }.buttonStyle(.borderedProminent)
                 }
             }
-            .padding(.top, 2)
+        } else if folder.reclaimableCount > 0 {
+            InfoBanner(
+                symbol: "leaf.fill", tint: Palette.roseInk,
+                text: String(localized: "\(Format.bytes(folder.reclaimableBytes)) can be freed here: \(Format.count(folder.reclaimableCount, one: String(localized: "clip that no project uses"), other: String(localized: "clips that no project uses")))")
+            ) {
+                Button { rescan() } label: { Label("Scan again", systemImage: "arrow.triangle.2.circlepath") }
+                    .buttonStyle(.bordered)
+                    .disabled(app.resolve.isScanning)
+                Button("Clean up", action: cleanup).buttonStyle(.borderedProminent)
+            }
+        } else {
+            InfoBanner(symbol: "checkmark.seal.fill", tint: VerdictStyle.keep, text: String(localized: "Every clip here is used by a project, or protected")) {
+                Button { rescan() } label: { Label("Scan again", systemImage: "arrow.triangle.2.circlepath") }
+                    .buttonStyle(.bordered)
+                    .disabled(app.resolve.isScanning)
+            }
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .surface(radius: Metrics.card, tint: Palette.rose)
+    }
+
+    private func rescan() {
+        Task { await app.resolve.scan(); app.library.recount(index: app.resolve.index) }
     }
 }
 
-private struct FolderRow: View {
-    let folder: LibraryModel.Folder
-    let selected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 7) {
-                HStack {
-                    Text(folder.name).font(.callout.weight(.semibold)).lineLimit(1)
-                    Spacer(minLength: 4)
-                    Text(Format.bytes(folder.totalBytes)).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                }
-                StorageBar(capacity: max(folder.totalBytes, 1), used: folder.totalBytes, reclaimable: folder.reclaimableBytes)
-                HStack(spacing: 6) {
-                    Text("\(folder.itemCount) items").font(.caption).foregroundStyle(.secondary)
-                    Spacer(minLength: 4)
-                    if folder.reclaimableBytes > 0 {
-                        Text("\(Format.bytes(folder.reclaimableBytes)) to free")
-                            .font(.caption.weight(.semibold)).foregroundStyle(Palette.rose)
-                    }
-                }
-            }
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background {
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(selected ? Palette.indigo.opacity(0.16) : Color(nsColor: .controlBackgroundColor))
-                    .overlay { RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(selected ? Palette.indigo.opacity(0.5) : Color.primary.opacity(0.06), lineWidth: 1) }
-            }
-            .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        }
-        .buttonStyle(.bouncy)
-        .animation(.rushesFade, value: selected)
-    }
-}
-
-// MARK: Folder header
-
-private struct FolderHeader: View {
+private struct FolderMenu: View {
     @Environment(AppModel.self) private var app
     let folder: LibraryModel.Folder
-    let onCleanup: () -> Void
     let onRename: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(folder.name).font(.title2.weight(.bold)).lineLimit(1)
-                HStack(spacing: 8) {
-                    Chip(text: Format.bytes(folder.totalBytes), symbol: "internaldrive")
-                    if app.resolve.hasIndex {
-                        Chip(text: String(localized: "\(Format.bytes(folder.usedBytes)) in projects"), symbol: "checkmark.seal.fill", tint: VerdictStyle.keep)
-                        Chip(text: String(localized: "\(Format.bytes(folder.reclaimableBytes)) unused"), symbol: "circle.slash", tint: VerdictStyle.skip)
-                    }
-                    if folder.review.enriching {
-                        ProgressView().controlSize(.mini)
-                    }
-                }
+        Menu {
+            Button("Show in Finder", systemImage: "folder") { NSWorkspace.shared.activateFileViewerSelecting([folder.url]) }
+            if PathKeys.cardNumber(in: folder.name) != nil {
+                Button("Rename...", systemImage: "pencil", action: onRename)
             }
-            Spacer(minLength: 12)
-            if folder.reclaimableCount > 0 {
-                ActionButton(title: "Clean up", symbol: "sparkles", prominent: true, tint: Palette.roseDeep, action: onCleanup)
-            }
-            Menu {
-                Button("Show in Finder", systemImage: "folder") { NSWorkspace.shared.activateFileViewerSelecting([folder.url]) }
-                if PathKeys.cardNumber(in: folder.name) != nil {
-                    Button("Rename...", systemImage: "pencil", action: onRename)
-                }
-                Button("Check the files again", systemImage: "checkmark.shield") { app.verify(folder) }
-                Divider()
-                Button("Read the folder again", systemImage: "arrow.clockwise") { app.reloadLibrary() }
-            } label: {
-                Image(systemName: "ellipsis")
-            }
-            .menuStyle(.button)
-            .glassButtonStyle()
-            .controlSize(.large)
-            .menuIndicator(.hidden)
+            Button("Check the files again", systemImage: "checkmark.shield") { app.verify(folder) }
+            Divider()
+            Button("Read the folder again", systemImage: "arrow.clockwise") { app.reloadLibrary() }
+        } label: {
+            Label("Folder", systemImage: "ellipsis")
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 10)
-        .padding(.bottom, 8)
+        .help("Folder")
     }
 }
 

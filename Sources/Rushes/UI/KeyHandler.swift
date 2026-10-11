@@ -7,7 +7,6 @@ import SwiftUI
 struct KeyHandler: NSViewRepresentable {
     var model: ReviewModel
     var player: PlayerController
-    @Binding var showDetails: Bool
     let perform: (Verdict) -> Void
 
     func makeNSView(context: Context) -> NSView {
@@ -20,7 +19,6 @@ struct KeyHandler: NSViewRepresentable {
         context.coordinator.model = model
         context.coordinator.player = player
         context.coordinator.perform = perform
-        context.coordinator.toggleDetails = { showDetails.toggle() }
     }
 
     static func dismantleNSView(_ view: NSView, coordinator: Coordinator) { coordinator.remove() }
@@ -30,7 +28,6 @@ struct KeyHandler: NSViewRepresentable {
         coordinator.model = model
         coordinator.player = player
         coordinator.perform = perform
-        coordinator.toggleDetails = { showDetails.toggle() }
         return coordinator
     }
 
@@ -39,7 +36,7 @@ struct KeyHandler: NSViewRepresentable {
         var model: ReviewModel!
         var player: PlayerController!
         var perform: ((Verdict) -> Void)!
-        var toggleDetails: (() -> Void)!
+        let toggleDetails: () -> Void = { Prefs.defaults.set(!Prefs.bool(PrefKey.showInspector), forKey: PrefKey.showInspector) }
         private var monitor: Any?
 
         func install() {

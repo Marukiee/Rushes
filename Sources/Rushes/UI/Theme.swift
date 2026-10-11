@@ -14,6 +14,19 @@ enum Palette {
     static let rose = Color(hex: 0xFFB0CB)
     static let roseDeep = Color(hex: 0x934464)
     static let urgent = Color(hex: 0xE8613C)
+
+    /// The light tints are made for a dark window. On a light one they all but vanish as text, so text and icons use
+    /// these, which are the same hue in a depth that reads on either.
+    static let accent = adaptive(light: 0x4A49C4, dark: 0x9E9DF0)
+    static let roseInk = adaptive(light: 0xC0356B, dark: 0xFFB0CB)
+
+    static func adaptive(light: UInt32, dark: UInt32) -> Color {
+        Color(nsColor: NSColor(name: nil) { appearance in
+            let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            let hex = isDark ? dark : light
+            return NSColor(srgbRed: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255, blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
+        })
+    }
 }
 
 extension Color {
@@ -47,28 +60,33 @@ extension Animation {
 /// How far a pressed element shrinks. Small enough to feel, not to distract.
 let pressedScale: CGFloat = 0.96
 
-/// Corner radii that nest. A shape inside another one gets the outer radius minus the
-/// gap between them, so the two curves stay parallel instead of looking pinched.
+/// One grid for the whole app: everything is a multiple of 4, and the gaps between things come from this list.
+enum Space {
+    static let xs: CGFloat = 4
+    static let s: CGFloat = 8
+    static let m: CGFloat = 12
+    static let l: CGFloat = 16
+    static let xl: CGFloat = 24
+    /// The margin of a page, left and right.
+    static let page: CGFloat = 24
+}
+
+/// Corner radii that nest. A shape inside another one gets the outer radius minus the gap between them, so the
+/// curves stay parallel (concentric) instead of looking pinched.
 enum Metrics {
-    static let card: CGFloat = 26
-    static let cardInset: CGFloat = 10
+    static let card: CGFloat = 16
+    static let cardInset: CGFloat = 8
+    static let control: CGFloat = 10
 
     static func inner(_ outer: CGFloat, inset: CGFloat) -> CGFloat { max(4, outer - inset) }
     static var cardInner: CGFloat { inner(card, inset: cardInset) }
 }
 
-extension View {
-    /// The space around a page. The toolbar already keeps the content clear of the window
-    /// edge, so the top only needs a little on top of that, or the gap reads as wasted.
-    func pagePadding() -> some View {
-        padding(.horizontal, 26).padding(.bottom, 26).padding(.top, 4)
-    }
-}
-
 // MARK: Surfaces
 
-/// The surface content sits on. Glass floats above the content (toolbar, controls, the
-/// toast), so the content itself gets a plain fill and never glass.
+/// The surface content sits on: a quiet tone of the text colour, so it is right in a light window and a dark one without
+/// either needing its own colours. Glass is for what floats above the content (toolbar, bars, the pill over a video),
+/// so the content itself never gets glass.
 struct Surface: ViewModifier {
     var radius: CGFloat = Metrics.card
     var tint: Color?
@@ -77,9 +95,9 @@ struct Surface: ViewModifier {
         content.background {
             let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
             shape
-                .fill(Color(nsColor: .controlBackgroundColor))
-                .overlay { if let tint { shape.fill(tint.opacity(0.10)) } }
-                .overlay { shape.strokeBorder(Color.primary.opacity(0.06), lineWidth: 1) }
+                .fill(Color.primary.opacity(0.045))
+                .overlay { if let tint { shape.fill(tint.opacity(0.07)) } }
+                .overlay { shape.strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5) }
         }
     }
 }
@@ -304,6 +322,16 @@ extension View {
             glassEffect(.regular.interactive(), in: shape)
         } else {
             glassEffect(.regular, in: shape)
+        }
+    }
+
+    /// Glass for what floats over a picture: tinted dark, so white text stays readable on a bright shot in a light Mac.
+    @ViewBuilder
+    func rushesVideoGlass<S: Shape>(_ shape: S) -> some View {
+        if DebugFlags.flatGlass {
+            background(shape.fill(Color.black.opacity(0.62)))
+        } else {
+            glassEffect(.regular.tint(Color.black.opacity(0.5)), in: shape)
         }
     }
 

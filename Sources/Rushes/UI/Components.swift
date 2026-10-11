@@ -37,24 +37,19 @@ struct SectionTitle: View {
     }
 }
 
-/// A button with a symbol. Glass like every other button; the main action of a card is the filled one.
+/// A button with a symbol, in the system's own styles: filled for the main action of a card, plain bordered for the others.
 struct ActionButton: View {
     let title: LocalizedStringKey
     let symbol: String
     var prominent = false
     var tint: Color = Palette.indigo
-    /// Takes the width it is given, so buttons side by side come out the same size. The label shrinks a little before it is ever cut off.
+    /// Takes the width it is given, so buttons side by side come out the same size.
     var wide = false
     let action: () -> Void
-
-    @Environment(\.isEnabled) private var isEnabled
-    @Environment(\.hoverEnabled) private var hoverEnabled
-    @LocalState private var hovering = false
 
     var body: some View {
         let button = Button(action: action) {
             Label(title, systemImage: symbol)
-                .font(.callout.weight(.semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(wide ? 0.8 : 1)
                 // A button is as wide as its words. A row that does not fit wraps or stacks (see ButtonRow), it never cuts one off.
@@ -62,18 +57,121 @@ struct ActionButton: View {
                 .frame(maxWidth: wide ? .infinity : nil)
         }
         if prominent {
-            let lit = hovering && isEnabled && hoverEnabled
-            button
-                .prominentButtonStyle()
-                .tint(tint)
-                .controlSize(.large)
-                .brightness(lit ? 0.07 : 0)
-                .scaleEffect(lit ? 1.025 : 1)
-                .shadow(color: tint.opacity(lit ? 0.35 : 0), radius: lit ? 10 : 0, y: lit ? 4 : 0)
-                .animation(.rushesSpringy, value: lit)
-                .onHover { hovering = $0 }
+            button.buttonStyle(.borderedProminent).tint(tint).buttonBorderShape(.capsule).controlSize(.large)
         } else {
-            button.glassButtonStyle().controlSize(.large)
+            button.buttonStyle(.bordered).buttonBorderShape(.capsule).controlSize(.large)
+        }
+    }
+}
+
+/// The disc under an icon: one round glass button shape for every small icon action, so none looks different from its neighbours.
+struct RoundIconDisc: View {
+    let symbol: String
+    var size: CGFloat = 36
+
+    var body: some View {
+        Image(systemName: symbol)
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundStyle(.primary)
+            .frame(width: size, height: size)
+            .rushesGlass(Circle(), interactive: true)
+            .contentShape(Circle())
+    }
+}
+
+struct RoundIconButton: View {
+    let symbol: String
+    let help: LocalizedStringKey
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) { RoundIconDisc(symbol: symbol) }
+            .buttonStyle(.bouncy)
+            .help(help)
+    }
+}
+
+struct RoundIconMenu<Content: View>: View {
+    let symbol: String
+    let help: LocalizedStringKey
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        Menu { content } label: { RoundIconDisc(symbol: symbol) }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .buttonStyle(.bouncy)
+            .help(help)
+    }
+}
+
+/// A choice between a few things, in Liquid Glass: a glass track with one lens of glass that slides to the chosen part, and
+/// can be dragged. Track and lens are in one glass container, so they melt into each other like the system's own controls.
+struct GlassSegmented<Value: Hashable>: View {
+    let options: [(value: Value, title: LocalizedStringKey)]
+    @Binding var selection: Value
+    var height: CGFloat = 40
+
+    private let inset: CGFloat = 4
+
+    private var selectedIndex: Int { options.firstIndex { $0.value == selection } ?? 0 }
+
+    var body: some View {
+        GeometryReader { geometry in
+            let segment = (geometry.size.width - inset * 2) / CGFloat(max(options.count, 1))
+            ZStack(alignment: .leading) {
+                track
+                // One lens, moved, not drawn again somewhere else: that is what makes it slide.
+                lens(width: segment, height: geometry.size.height - inset * 2)
+                    .offset(x: inset + segment * CGFloat(selectedIndex))
+                HStack(spacing: 0) {
+                    ForEach(options.indices, id: \.self) { index in
+                        Text(options[index].title)
+                            .font(.callout.weight(index == selectedIndex ? .semibold : .medium))
+                            .foregroundStyle(index == selectedIndex ? Color.primary : Color.secondary)
+                            .lineLimit(1)
+                            .frame(width: segment, height: geometry.size.height)
+                    }
+                }
+                .padding(.horizontal, inset)
+            }
+            .contentShape(Capsule())
+            .gesture(
+                DragGesture(minimumDistance: 0).onChanged { value in
+                    let index = min(options.count - 1, max(0, Int((value.location.x - inset) / segment)))
+                    guard options[index].value != selection else { return }
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.8)) { selection = options[index].value }
+                }
+            )
+        }
+        .frame(height: height)
+        .accessibilityRepresentation {
+            Picker("", selection: $selection) {
+                ForEach(options.indices, id: \.self) { Text(options[$0].title).tag(options[$0].value) }
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+
+    @ViewBuilder
+    private var track: some View {
+        if DebugFlags.flatGlass {
+            Capsule().fill(Color.primary.opacity(0.06))
+        } else {
+            Color.clear.glassEffect(.regular, in: Capsule())
+        }
+    }
+
+    @ViewBuilder
+    private func lens(width: CGFloat, height: CGFloat) -> some View {
+        if DebugFlags.flatGlass {
+            Capsule().fill(Color.primary.opacity(0.14)).frame(width: width, height: height)
+        } else {
+            // A little of the text colour under the glass, so the chosen part reads in a light window as well as a dark one.
+            Capsule().fill(Color.primary.opacity(0.08))
+                .frame(width: width, height: height)
+                .glassEffect(.regular.interactive(), in: Capsule())
         }
     }
 }
@@ -360,6 +458,10 @@ enum Format {
 
     static func day(_ date: Date) -> String {
         date.formatted(.dateTime.weekday(.wide).day().month(.wide).year())
+    }
+
+    static func shortDay(_ date: Date) -> String {
+        date.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).year())
     }
 
     static func shortDate(_ date: Date) -> String {

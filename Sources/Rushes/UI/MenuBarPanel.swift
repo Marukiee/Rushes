@@ -52,7 +52,7 @@ struct MenuBarPanel: View {
                     WindowOpener.shared.openMain()
                 } label: {
                     HStack {
-                        Image(systemName: "leaf.fill").foregroundStyle(Palette.rose)
+                        Image(systemName: "leaf.fill").foregroundStyle(Palette.roseInk)
                         Text("\(Format.bytes(app.library.reclaimableBytes)) can be freed")
                         Spacer()
                         Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)

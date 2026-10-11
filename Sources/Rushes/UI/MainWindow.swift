@@ -5,24 +5,15 @@ import SwiftUI
 struct MainWindow: View {
     @Environment(AppModel.self) private var app
     @Environment(\.openWindow) private var openWindow
-    @LocalState private var columnVisibility: NavigationSplitViewVisibility = .all
-    @LocalState private var settling = false
 
     var body: some View {
         @Bindable var app = app
-        NavigationSplitView(columnVisibility: $columnVisibility) {
+        NavigationSplitView {
             Sidebar()
-                .navigationSplitViewColumnWidth(min: 230, ideal: 250, max: 300)
+                .navigationSplitViewColumnWidth(min: 220, ideal: 240, max: 300)
         } detail: {
             detail
-                .scrollEdgeEffectHidden(settling || columnVisibility != .detailOnly, for: .top)
-                .toolbar(removing: .title)
-                .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
                 .animation(.rushes, value: app.page)
-                .onChange(of: app.page) {
-                    settling = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { settling = false }
-                }
         }
         .overlay(alignment: .bottom) {
             if let toast = app.toast {
@@ -107,112 +98,49 @@ private struct IntegritySheet: View {
 
 // MARK: Sidebar
 
+/// The system sidebar: a list with symbols and badges, the folders of the library under it. Nothing in it is drawn by hand,
+/// so it looks and behaves like the sidebar of any other Mac app, glass included.
 struct Sidebar: View {
     @Environment(AppModel.self) private var app
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 10) {
-                    Image(systemName: "sdcard.fill")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 32, height: 32)
-                        .background(Palette.indigo.gradient, in: .circle)
-                    Text(AppIdentity.displayName).font(.title3.weight(.bold))
-                }
-                .padding(.horizontal, 12)
-                .padding(.top, 10)
-                .padding(.bottom, 12)
-
-                row(.overview, "Overview", "square.grid.2x2.fill", badge: nil)
-                row(.review, "Card", "sdcard.fill", badge: cardBadge)
-                row(.library, "Library", "externaldrive.fill", badge: libraryBadge)
-                row(.history, "Imports", "clock.arrow.circlepath", badge: nil)
-                row(.resolve, "DaVinci Resolve", "film.stack", badge: nil)
+        @Bindable var app = app
+        List(selection: $app.sidebarSelection) {
+            Section {
+                Label("Overview", systemImage: "square.grid.2x2").tag(SidebarItem.overview)
+                Label("Card", systemImage: "sdcard")
+                    .badge(cardBadge)
+                    .tag(SidebarItem.card)
             }
-            .padding(.horizontal, 10)
+            Section("Library") {
+                if app.library.folders.isEmpty {
+                    Label("Library", systemImage: "externaldrive").tag(SidebarItem.library)
+                } else {
+                    ForEach(app.library.folders) { folder in
+                        Label(folder.name, systemImage: "folder")
+                            .badge(folder.reclaimableBytes > 0 ? Text(Format.bytes(folder.reclaimableBytes)) : nil)
+                            .tag(SidebarItem.folder(folder.id))
+                    }
+                }
+            }
+            Section {
+                Label("Imports", systemImage: "clock.arrow.circlepath").tag(SidebarItem.history)
+                Label("DaVinci Resolve", systemImage: "film.stack").tag(SidebarItem.resolve)
+            }
         }
-        .scrollContentBackground(.hidden)
+        .listStyle(.sidebar)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            VStack(spacing: 8) {
-                UpdateBanner(compact: true, fromBottom: true).padding(.horizontal, 10)
+            VStack(spacing: Space.s) {
+                UpdateBanner(compact: true, fromBottom: true)
                 DiskFooter()
             }
-            .padding(.bottom, 10)
+            .padding(Space.m)
         }
     }
 
-    private var cardBadge: Badge? {
-        let waiting = app.sessions.filter { $0.phase == .ready && $0.newItems > 0 && $0.stage != .imported }.count
-        if app.job?.isRunning == true { return .progress }
-        return waiting > 0 ? .count(waiting) : nil
-    }
-
-    private var libraryBadge: Badge? {
-        app.library.reclaimableBytes > 0 ? .text(Format.bytes(app.library.reclaimableBytes)) : nil
-    }
-
-    enum Badge {
-        case count(Int)
-        case text(String)
-        case progress
-    }
-
-    private func row(_ page: AppPage, _ title: LocalizedStringKey, _ symbol: String, badge: Badge?) -> some View {
-        SidebarButton(selected: app.page == page) {
-            app.page = page
-        } content: {
-            HStack(spacing: 11) {
-                Image(systemName: symbol)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(app.page == page ? Palette.indigoLight : .secondary)
-                    .frame(width: 22)
-                Text(title).font(.callout.weight(.semibold))
-                Spacer(minLength: 4)
-                switch badge {
-                case let .count(count): Chip(text: "\(count)", tint: Palette.indigoLight)
-                case let .text(text): Chip(text: text, tint: Palette.rose)
-                case .progress: PillSpinner(size: 15)
-                case nil: EmptyView()
-                }
-            }
-            .padding(.vertical, 5)
-        }
-    }
-}
-
-private struct SidebarButton<Content: View>: View {
-    let selected: Bool
-    let action: () -> Void
-    @ViewBuilder var content: Content
-    @Environment(\.hoverEnabled) private var hoverEnabled
-    @LocalState private var hovering = false
-
-    var body: some View {
-        Button(action: action) {
-            content
-                .padding(.horizontal, 10)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(selected ? Palette.indigo.opacity(0.16) : Color.primary.opacity(hovering && hoverEnabled ? 0.07 : 0))
-                }
-                .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        }
-        .buttonStyle(SidebarPressStyle())
-        .onHover { hovering = $0 }
-        .animation(.rushesFade, value: selected)
-        .animation(.rushesFade, value: hovering)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-}
-
-private struct SidebarPressStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.985 : 1)
-            .animation(.rushesBouncy, value: configuration.isPressed)
+    private var cardBadge: Int {
+        if app.job?.isRunning == true { return 0 }
+        return app.sessions.filter { $0.phase == .ready && $0.newItems > 0 && $0.stage != .imported }.count
     }
 }
 
@@ -221,22 +149,23 @@ private struct DiskFooter: View {
     @Environment(AppModel.self) private var app
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(alignment: .top, spacing: Space.m) {
             Image(systemName: "externaldrive.fill")
-                .foregroundStyle(app.destination == nil ? Color.secondary : Palette.indigoLight)
+                .font(.system(size: 15))
+                .foregroundStyle(app.destination == nil ? Color.secondary : Palette.accent)
+                .frame(width: 22)
             if let disk = app.destination {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(disk.name).font(.caption.weight(.semibold)).lineLimit(1)
+                VStack(alignment: .leading, spacing: Space.xs) {
+                    Text(disk.name).font(.callout.weight(.medium)).lineLimit(1)
                     StorageBar(capacity: disk.capacity, used: disk.used, reclaimable: app.library.reclaimableBytes)
-                    Text("\(Format.bytes(disk.available)) free").font(.caption2).foregroundStyle(.secondary)
+                    Text("\(Format.bytes(disk.available)) free").font(.caption).foregroundStyle(.secondary)
                 }
             } else {
-                Text("Disk not connected").font(.caption).foregroundStyle(.secondary)
+                Text("Disk not connected").font(.callout).foregroundStyle(.secondary)
             }
         }
-        .padding(12)
+        .padding(Space.m)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .rushesGlass(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .padding(.horizontal, 10)
+        .surface(radius: Metrics.card)
     }
 }

@@ -37,6 +37,7 @@ enum PrefKey {
     static let backupName = "backupName"
     static let backupSubfolder = "backupSubfolder"
     static let undecidedMeansKeep = "undecidedMeansKeep"
+    static let showInspector = "showInspector"
     static let showKnown = "showKnown"
     static let autoplay = "autoplay"
     static let soundOn = "soundOn"
@@ -77,6 +78,7 @@ enum Prefs {
             PrefKey.showInDock: true,
             PrefKey.askForName: true,
             PrefKey.undecidedMeansKeep: true,
+            PrefKey.showInspector: true,
             PrefKey.showKnown: false,
             PrefKey.autoplay: true,
             PrefKey.soundOn: false,

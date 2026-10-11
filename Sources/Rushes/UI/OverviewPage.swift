@@ -34,14 +34,11 @@ struct OverviewPage: View {
         }
         .animation(.rushes, value: app.job?.id)
         .animation(.rushes, value: app.sessions.map(\.id))
+        .navigationTitle("Overview")
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Rushes").font(.largeTitle.weight(.bold))
-            Text(sentence).font(.title3).foregroundStyle(.secondary)
-        }
-        .padding(.top, 6)
+        Text(sentence).font(.title2.weight(.semibold)).padding(.top, 2)
     }
 
     private var sentence: String {
@@ -156,7 +153,7 @@ private struct ResolveSlot: View {
     @Environment(AppModel.self) private var app
 
     var body: some View {
-        Slot(title: "DaVinci Resolve", symbol: "film.stack", tint: Palette.rose) {
+        Slot(title: "DaVinci Resolve", symbol: "film.stack", tint: Palette.roseInk) {
             if !Prefs.bool(PrefKey.resolveEnabled) {
                 Text("Off").font(.title3.weight(.bold)).foregroundStyle(.secondary)
             } else if app.resolve.isScanning {
@@ -233,7 +230,7 @@ private struct SavingsCard: View {
                     Text("Space you can get back").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                     Text(Format.bytes(library.reclaimableBytes))
                         .font(.system(size: 34, weight: .bold, design: .rounded).monospacedDigit())
-                        .foregroundStyle(Palette.rose)
+                        .foregroundStyle(Palette.roseInk)
                     Text("\(Format.count(library.reclaimableCount, one: String(localized: "clip"), other: String(localized: "clips"))) in your card folders are in no DaVinci Resolve project.")
                         .font(.callout).foregroundStyle(.secondary)
                 }
@@ -261,7 +258,7 @@ private struct RecentImports: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
                     SectionTitle("Recent")
-                    Button("All imports") { app.page = .history }.buttonStyle(.plain).foregroundStyle(Palette.indigoLight)
+                    Button("All imports") { app.page = .history }.buttonStyle(.plain).foregroundStyle(Palette.accent)
                 }
                 VStack(spacing: 0) {
                     ForEach(Array(recent.enumerated()), id: \.element.id) { offset, record in

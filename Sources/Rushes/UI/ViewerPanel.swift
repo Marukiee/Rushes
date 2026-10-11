@@ -10,32 +10,34 @@ struct ViewerPanel: View {
     @LocalState private var player = PlayerController()
     @LocalState private var photo: CGImage?
     @LocalState private var flash: Verdict?
-    @LocalState private var showDetails = true
+    @AppStorage(PrefKey.showInspector) private var showDetails = true
 
     var body: some View {
         GeometryReader { geometry in
-            // The picture is as big as the width allows, but never more than about two thirds of the height, so a tall photo
-            // leaves room for the buttons. The frame is exactly the shape of the picture: no bars, and the border goes round it.
-            let tallest = max(240, geometry.size.height * 0.66)
+            // The picture is as wide as the column and never taller than about two thirds of it, so a tall photo leaves room for
+            // the buttons. The frame is exactly the shape of the picture: no bars, and the clip goes round that.
+            let tallest = max(220, geometry.size.height * 0.55)
             let height = min(geometry.size.width / aspect, tallest)
             let width = height * aspect
-            VStack(spacing: 12) {
+            VStack(spacing: Space.l) {
                 stage
+                    // The picture is dark whatever the Mac is set to, so what floats over it is dark glass with white text.
+                    .environment(\.colorScheme, .dark)
                     .frame(width: width, height: height)
-                    .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-                    .overlay { RoundedRectangle(cornerRadius: 26, style: .continuous).strokeBorder(Color.white.opacity(0.08), lineWidth: 1) }
+                    .clipShape(RoundedRectangle(cornerRadius: Metrics.card, style: .continuous))
+                    .frame(maxWidth: .infinity)
                 VerdictBar(model: model, onKeep: { perform(.keep) }, onSkip: { perform(.skip) })
                 if showDetails, let item = model.focusItem {
-                    DetailsView(model: model, item: item)
-                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    DetailsCard(model: model, item: item)
                 }
+                // What is left of the height goes to a look ahead, so the next clip is never a surprise.
+                if geometry.size.height - height - (showDetails ? 290 : 100) > 90 { UpNextStrip(model: model) }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
-        .animation(.rushes, value: showDetails)
         .task(id: model.focusID) { await load() }
         .onDisappear { player.unload() }
-        .background(KeyHandler(model: model, player: player, showDetails: $showDetails, perform: { perform($0) }))
+        .background(KeyHandler(model: model, player: player, perform: { perform($0) }))
     }
 
     /// A verdict from a button or a key: the sign pops up over the picture, then the next one is chosen.
@@ -113,17 +115,17 @@ struct ViewerPanel: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .rushesGlass(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .rushesVideoGlass(RoundedRectangle(cornerRadius: 16, style: .continuous))
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 6) {
                 if let suggestion = model.suggestions[item.id] {
                     Chip(text: suggestion.text, symbol: suggestion.symbol, tint: VerdictStyle.hint)
-                        .padding(4).rushesGlass(.capsule)
+                        .padding(4).rushesVideoGlass(.capsule)
                 }
                 if model.mode == .library, let usage = model.usage[item.id] {
                     let badge = usage.badge
                     Chip(text: badge.text, symbol: badge.symbol, tint: badge.color)
-                        .padding(4).rushesGlass(.capsule)
+                        .padding(4).rushesVideoGlass(.capsule)
                 }
             }
         }
@@ -219,67 +221,69 @@ private struct TransportBar: View {
         .foregroundStyle(.white)
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
-        .rushesGlass(.capsule)
+        .rushesVideoGlass(.capsule)
     }
 }
 
 // MARK: Verdict bar
 
+/// Keep and Leave out, with the stars between them and Undo beside. System glass buttons in one container, the words and
+/// keys when the width allows, the symbols when it does not. A label is never cut off.
 struct VerdictBar: View {
     var model: ReviewModel
     let onKeep: () -> Void
     let onSkip: () -> Void
 
     var body: some View {
-        // The words and the keys when there is room, the symbols alone when there is not. A label is never cut off.
         ViewThatFits(in: .horizontal) {
-            bar(words: true)
-            bar(words: false)
+            bar(words: true, keys: true)
+            bar(words: true, keys: false)
+            bar(words: false, keys: false)
         }
     }
 
-    private func bar(words: Bool) -> some View {
+    private func bar(words: Bool, keys: Bool) -> some View {
         let library = model.mode == .library
         let verdict = model.focusItem.map { model.verdict(of: $0) } ?? .undecided
-        return GlassEffectContainer(spacing: 10) {
-            HStack(spacing: 10) {
+        return GlassEffectContainer(spacing: Space.m) {
+            HStack(spacing: Space.m) {
                 Button { model.undo() } label: {
-                    Image(systemName: "arrow.uturn.backward").frame(width: 20)
+                    Label("Undo", systemImage: "arrow.uturn.backward").labelStyle(.iconOnly).frame(width: 18)
                 }
-                .glassButtonStyle()
+                .buttonStyle(.glass)
                 .controlSize(.large)
                 .disabled(!model.canUndo)
                 .help("Undo (Z)")
 
                 verdictButton(
                     symbol: library ? "trash" : "xmark", title: library ? "Move to Trash" : "Leave out", key: "X",
-                    tint: VerdictStyle.skip.opacity(verdict == .skip ? 1 : 0.78), words: words, action: onSkip
+                    tint: VerdictStyle.skip, selected: verdict == .skip, words: words, keys: keys, action: onSkip
                 )
                 StarRating(model: model)
                 verdictButton(
                     symbol: library ? "lock" : "checkmark", title: library ? "Protect" : "Keep", key: "\u{23CE}",
-                    tint: VerdictStyle.keep.opacity(verdict == .keep ? 1 : 0.78), words: words, action: onKeep
+                    tint: VerdictStyle.keep, selected: verdict == .keep, words: words, keys: keys, action: onKeep
                 )
             }
         }
     }
 
-    private func verdictButton(symbol: String, title: LocalizedStringKey, key: String, tint: Color, words: Bool, action: @escaping () -> Void) -> some View {
+    private func verdictButton(symbol: String, title: LocalizedStringKey, key: String, tint: Color, selected: Bool, words: Bool, keys: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 8) {
+            HStack(spacing: Space.s) {
                 Image(systemName: symbol)
                 if words {
                     Text(title).lineLimit(1)
-                    KeyCap(key)
+                    if keys { KeyCap(key) }
                 }
             }
             .font(.callout.weight(.semibold))
             .fixedSize()
             .frame(maxWidth: words ? .infinity : nil)
-            .padding(.horizontal, words ? 4 : 10)
+            .padding(.horizontal, words ? Space.xs : Space.s)
         }
-        .prominentButtonStyle()
-        .tint(tint)
+        .buttonStyle(.glassProminent)
+        .tint(selected ? tint : tint.opacity(0.85))
         .controlSize(.large)
         .help(title)
     }
@@ -290,58 +294,15 @@ struct StarRating: View {
 
     var body: some View {
         let current = model.focusID.flatMap { model.ratings[$0] } ?? 0
-        HStack(spacing: 2) {
+        HStack(spacing: 0) {
             ForEach(1 ... 5, id: \.self) { star in
                 Button { model.rate(star == current ? 0 : star) } label: {
                     Image(systemName: star <= current ? "star.fill" : "star")
                         .font(.system(size: 13))
-                        .foregroundStyle(star <= current ? VerdictStyle.hint : .secondary)
-                        .frame(width: 20, height: 28)
+                        .foregroundStyle(star <= current ? VerdictStyle.hint : Color.secondary)
+                        .frame(width: 22, height: 28)
                 }
                 .buttonStyle(.bouncy)
-            }
-        }
-        .padding(.horizontal, 6)
-        .rushesGlass(.capsule)
-    }
-}
-
-// MARK: Details
-
-private struct DetailsView: View {
-    var model: ReviewModel
-    let item: MediaItem
-
-    var body: some View {
-        let meta = model.metadata[item.id]
-        VStack(alignment: .leading, spacing: 10) {
-            if model.mode == .library, let usage = model.usage[item.id] {
-                UsageList(usage: usage)
-            }
-            Grid(alignment: .leading, horizontalSpacing: 18, verticalSpacing: 5) {
-                row("Camera", meta?.camera)
-                row("Lens", meta?.lens)
-                row("Format", [meta?.codec, meta?.resolution, meta?.frameRateText].compactMap { $0 }.joined(separator: "  ·  "))
-                row("Picture profile", meta?.gamma)
-                if item.kind == .photo {
-                    row("Exposure", [meta?.shutter, meta?.aperture.map { "f/\(String(format: "%g", $0))" }, meta?.iso.map { "ISO \($0)" }]
-                        .compactMap { $0 }.joined(separator: "  ·  "))
-                }
-                row("File", item.primary.rel)
-            }
-            .font(.caption)
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .surface(radius: 20)
-    }
-
-    @ViewBuilder
-    private func row(_ title: LocalizedStringKey, _ value: String?) -> some View {
-        if let value, !value.isEmpty {
-            GridRow {
-                Text(title).foregroundStyle(.secondary)
-                Text(value).textSelection(.enabled).lineLimit(2).truncationMode(.middle)
             }
         }
     }
@@ -383,5 +344,66 @@ struct UsageList: View {
         case .possible: String(localized: "A clip with this name is used elsewhere")
         case .unused: String(localized: "Not in any DaVinci Resolve project")
         }
+    }
+}
+
+/// The next few clips, small, under the details. A click goes straight to one.
+private struct UpNextStrip: View {
+    var model: ReviewModel
+
+    var body: some View {
+        let upcoming = model.upcoming(5)
+        if !upcoming.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Up next").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                    Spacer()
+                    if let position = model.focusPosition {
+                        Text("\(position) of \(model.visible.count)").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
+                    }
+                }
+                HStack(spacing: 8) {
+                    ForEach(upcoming) { item in MiniThumb(model: model, item: item) }
+                    if upcoming.count < 5 {
+                        ForEach(0 ..< (5 - upcoming.count), id: \.self) { _ in Color.clear.aspectRatio(16 / 9, contentMode: .fit).frame(maxWidth: .infinity) }
+                    }
+                }
+            }
+            .padding(.top, 2)
+        }
+    }
+}
+
+private struct MiniThumb: View {
+    var model: ReviewModel
+    let item: MediaItem
+    @LocalState private var image: CGImage?
+
+    var body: some View {
+        let verdict = model.verdict(of: item)
+        let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
+        Button { model.focus(item.id) } label: {
+            Color.black.opacity(0.9)
+                .aspectRatio(16 / 9, contentMode: .fit)
+                .overlay {
+                    ZStack(alignment: .topLeading) {
+                        if let image { Image(decorative: image, scale: 1).resizable().aspectRatio(contentMode: .fill) }
+                        if verdict != .undecided {
+                            Image(systemName: VerdictStyle.symbol(verdict, mode: model.mode))
+                                .font(.system(size: 8, weight: .heavy))
+                                .foregroundStyle(.white)
+                                .frame(width: 16, height: 16)
+                                .background(VerdictStyle.color(verdict).gradient, in: .circle)
+                                .padding(4)
+                        }
+                    }
+                }
+                .clipShape(shape)
+                .overlay { shape.strokeBorder(Color.white.opacity(0.08), lineWidth: 1) }
+        }
+        .buttonStyle(.bouncy)
+        .frame(maxWidth: .infinity)
+        .task(id: item.id) { image = await Thumbnailer.shared.image(for: item, root: model.root, maxPixel: 240) }
+        .help(item.name)
     }
 }

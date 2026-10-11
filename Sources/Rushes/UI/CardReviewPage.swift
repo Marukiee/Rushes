@@ -22,10 +22,9 @@ struct CardReviewPage: View {
 
     @ViewBuilder
     private func content(for session: CardSession) -> some View {
-        VStack(spacing: 0) {
-            CardHeader(session: session)
+        Group {
             if session.phase == .scanning {
-                VStack(spacing: 14) {
+                VStack(spacing: Space.l) {
                     PillSpinner(size: 34)
                     Text("Reading \(session.name)...").font(.title3.weight(.semibold))
                     Text("Looking at what is on the card. Nothing is copied yet.").foregroundStyle(.secondary)
@@ -35,48 +34,31 @@ struct CardReviewPage: View {
                 if session.newItems == 0, !review.showKnown {
                     NothingNewView(session: session)
                 } else {
-                    ReviewBody(model: review)
-                    ImportBar(session: session, review: review)
+                    ReviewBody(model: review) { SuggestionBanner(model: review) }
                 }
             }
         }
-    }
-}
-
-private struct CardHeader: View {
-    @Environment(AppModel.self) private var app
-    let session: CardSession
-
-    var body: some View {
-        HStack(spacing: 14) {
-            Image(systemName: "sdcard.fill")
-                .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(.white)
-                .frame(width: 42, height: 42)
-                .background(Palette.indigo.gradient, in: .circle)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(session.name).font(.title2.weight(.bold))
-                Text(headline).font(.callout).foregroundStyle(.secondary)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if let review = session.review, session.phase == .ready, session.newItems > 0 || review.showKnown {
+                ImportBar(session: session, review: review)
             }
-            Spacer(minLength: 12)
-            if app.sessions.count > 1 {
-                Picker("Card", selection: Binding(get: { app.reviewSessionID ?? session.id }, set: { app.reviewSessionID = $0 })) {
-                    ForEach(app.sessions) { Text($0.name).tag($0.id) }
-                }
-                .frame(width: 160)
-            }
-            Button { app.eject(session) } label: {
-                Label("Eject", systemImage: "eject.fill")
-            }
-            .glassButtonStyle()
-            .disabled(app.job?.isRunning == true)
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 10)
-        .padding(.bottom, 8)
+        .navigationTitle(session.name)
+        .navigationSubtitle([headline(for: session), session.review?.progressText ?? ""].filter { !$0.isEmpty }.joined(separator: "  ·  "))
+        .toolbar {
+            if let review = session.review, session.phase == .ready, session.newItems > 0 || review.showKnown {
+                ReviewToolbar(model: review)
+            }
+            ToolbarSpacer(.fixed, placement: .primaryAction)
+            ToolbarItem(placement: .primaryAction) {
+                Button { app.eject(session) } label: { Label("Eject", systemImage: "eject").labelStyle(.titleAndIcon) }
+                    .disabled(app.job?.isRunning == true)
+                    .help("Eject the card")
+            }
+        }
     }
 
-    private var headline: String {
+    private func headline(for session: CardSession) -> String {
         guard session.phase == .ready else { return String(localized: "Reading...") }
         var parts = ["\(session.newItems) " + String(localized: "new") + " (\(Format.bytes(session.newBytes)))"]
         if session.knownItems > 0 { parts.append(String(localized: "\(session.knownItems) already on your disk")) }
@@ -109,7 +91,7 @@ private struct NothingNewView: View {
     }
 }
 
-/// What will be copied, and the button that copies it.
+/// What will be copied, and the button that copies it. It floats over the clips as one glass bar; what is in it is plain.
 private struct ImportBar: View {
     @Environment(AppModel.self) private var app
     let session: CardSession
@@ -125,46 +107,45 @@ private struct ImportBar: View {
         let copyBytes = bytesKeep + (undecidedMeansKeep ? bytesRest : 0)
         let running = app.job?.isRunning == true
 
-        HStack(spacing: 18) {
-            Group {
+        HStack(spacing: Space.xl) {
+            HStack(spacing: Space.xl) {
                 Stat(symbol: "checkmark", tint: VerdictStyle.keep, value: "\(counts.keep)", detail: Format.bytes(bytesKeep))
                 Stat(symbol: "xmark", tint: VerdictStyle.skip, value: "\(counts.skip)", detail: Format.bytes(bytesSkip))
                 Stat(symbol: "circle.dashed", tint: .secondary, value: "\(counts.undecided)", detail: Format.bytes(bytesRest))
             }
-            Spacer(minLength: 8)
+            Spacer(minLength: Space.m)
             if let destination = app.destination {
                 VStack(alignment: .trailing, spacing: 1) {
-                    Text("To \(destination.name)").font(.caption.weight(.semibold))
+                    Text("To \(destination.name)").font(.caption.weight(.medium))
                     Text("\(Format.bytes(destination.available)) free").font(.caption).foregroundStyle(.secondary)
                 }
+            } else {
+                Text("Connect your disk to copy").font(.caption.weight(.medium)).foregroundStyle(VerdictStyle.hint)
             }
             Menu {
                 Toggle("Also copy what I have not judged", isOn: $undecidedMeansKeep)
                 Divider()
                 Button("Copy everything new, whatever I chose") { app.startImport(session, everything: true) }
             } label: {
-                Image(systemName: "chevron.up")
+                Label("More", systemImage: "chevron.up").labelStyle(.iconOnly)
             }
-            .menuStyle(.button)
-            .glassButtonStyle()
-            .controlSize(.large)
+            .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
-
-            ActionButton(title: running ? "Copying..." : "Copy \(copyCount) (\(Format.bytes(copyBytes)))", symbol: "square.and.arrow.down.fill", prominent: true) {
-                app.startImport(session)
+            .fixedSize()
+            Button { app.startImport(session) } label: {
+                Label(running ? LocalizedStringKey("Copying...") : LocalizedStringKey("Copy \(copyCount) (\(Format.bytes(copyBytes)))"), systemImage: "square.and.arrow.down.fill")
+                    .fixedSize()
             }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
+            .controlSize(.large)
             .disabled(running || app.destination == nil || copyCount == 0)
         }
-        .padding(.horizontal, 22)
-        .padding(.vertical, 12)
-        .rushesGlass(RoundedRectangle(cornerRadius: 30, style: .continuous))
-        .padding(.horizontal, 20)
-        .padding(.bottom, 14)
-        .overlay(alignment: .top) {
-            if app.destination == nil {
-                Text("Connect your disk to copy").font(.caption.weight(.semibold)).foregroundStyle(VerdictStyle.hint).offset(y: -12)
-            }
-        }
+        .padding(.horizontal, Space.xl)
+        .padding(.vertical, Space.m)
+        .rushesGlass(Capsule())
+        .padding(.horizontal, Space.page)
+        .padding(.bottom, Space.l)
     }
 }
 
@@ -175,14 +156,14 @@ private struct Stat: View {
     let detail: String
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Space.s) {
             Image(systemName: symbol)
                 .font(.system(size: 10, weight: .heavy))
                 .foregroundStyle(.white)
                 .frame(width: 22, height: 22)
                 .background(tint.gradient, in: .circle)
             VStack(alignment: .leading, spacing: 0) {
-                Text(value).font(.callout.weight(.bold).monospacedDigit()).contentTransition(.numericText())
+                Text(value).font(.callout.weight(.semibold).monospacedDigit()).contentTransition(.numericText())
                 Text(detail).font(.caption2).foregroundStyle(.secondary)
             }
         }

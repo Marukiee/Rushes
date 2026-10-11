@@ -13,9 +13,8 @@ struct ResolvePage: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                Text("DaVinci Resolve").font(.largeTitle.weight(.bold)).padding(.top, 6)
                 Text("Rushes reads your Resolve projects to see which clips are used, and can put new footage in a bin for you.")
-                    .font(.title3).foregroundStyle(.secondary)
+                    .font(.title3).foregroundStyle(.secondary).padding(.top, 2)
 
                 Card {
                     Toggle(isOn: $enabled) {
@@ -36,6 +35,7 @@ struct ResolvePage: View {
             .padding(.horizontal, 26)
             .padding(.bottom, 30)
         }
+        .navigationTitle("DaVinci Resolve")
         .task { await app.resolve.refreshBridge() }
     }
 
@@ -64,7 +64,7 @@ struct ResolvePage: View {
                     ForEach(Array(app.resolve.projects.enumerated()), id: \.element.id) { offset, project in
                         HStack(spacing: 12) {
                             Image(systemName: project.failed ? "exclamationmark.triangle.fill" : "film.stack")
-                                .foregroundStyle(project.failed ? VerdictStyle.hint : Palette.rose)
+                                .foregroundStyle(project.failed ? VerdictStyle.hint : Palette.roseInk)
                                 .frame(width: 24)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(project.name).font(.callout.weight(.semibold))

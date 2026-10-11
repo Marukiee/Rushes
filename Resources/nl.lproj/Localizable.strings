@@ -11,6 +11,8 @@
 "%@ and your disk" = "%@ en je schijf";
 "%@ and your disk are in" = "%@ en je schijf zitten erin";
 "%@ can be freed" = "%@ kan vrij";
+"%@ can be freed here: %@" = "%@ kan hier vrij: %@";
+"%@ can be freed here: %lld" = "%@ kan hier vrij: %lld";
 "%@ cards" = "%@ kaarten";
 "%@ changed, %@ missing" = "%@ veranderd, %@ ontbreken";
 "%@ changed, %lld missing" = "%@ veranderd, %lld ontbreken";
@@ -38,7 +40,6 @@
 "%@ is in with %lld new clips and photos." = "%@ zit erin met %lld nieuwe clips en foto's.";
 "%@ is on your disk" = "%@ staat op je schijf";
 "%@ is safe to remove" = "%@ kan veilig worden verwijderd";
-"%@ items" = "%@ items";
 "%@ left out" = "%@ overgeslagen";
 "%@ left out before" = "%@ eerder overgeslagen";
 "%@ left out, %@ saved" = "%@ overgeslagen, %@ bespaard";
@@ -50,7 +51,6 @@
 "%@ of %@ files" = "%@ van %@ bestanden";
 "%@ of %lld" = "%@ van %lld";
 "%@ of %lld files" = "%@ van %lld bestanden";
-"%@ to free" = "%@ vrij te maken";
 "%@ unused" = "%@ ongebruikt";
 "%@ were already there" = "%@ stonden er al";
 "%@% of the median" = "%@% van het gemiddelde";
@@ -67,6 +67,8 @@
 "%lld and your disk" = "%lld en je schijf";
 "%lld and your disk are in" = "%lld en je schijf zitten erin";
 "%lld can be freed" = "%lld kan vrij";
+"%lld can be freed here: %@" = "%lld kan hier vrij: %@";
+"%lld can be freed here: %lld" = "%lld kan hier vrij: %lld";
 "%lld cards" = "%lld kaarten";
 "%lld changed, %@ missing" = "%lld veranderd, %@ ontbreken";
 "%lld changed, %lld missing" = "%lld veranderd, %lld ontbreken";
@@ -94,7 +96,6 @@
 "%lld is in with %lld new clips and photos." = "%lld zit erin met %lld nieuwe clips en foto's.";
 "%lld is on your disk" = "%lld staat op je schijf";
 "%lld is safe to remove" = "%lld kan veilig worden verwijderd";
-"%lld items" = "%lld items";
 "%lld left out" = "%lld overgeslagen";
 "%lld left out before" = "%lld eerder overgeslagen";
 "%lld left out, %@ saved" = "%lld overgeslagen, %@ bespaard";
@@ -106,7 +107,6 @@
 "%lld of %@ files" = "%lld van %@ bestanden";
 "%lld of %lld" = "%lld van %lld";
 "%lld of %lld files" = "%lld van %lld bestanden";
-"%lld to free" = "%lld vrij te maken";
 "%lld unused" = "%lld ongebruikt";
 "%lld were already there" = "%lld stonden er al";
 "%lld% of the median" = "%lld% van het gemiddelde";
@@ -205,6 +205,7 @@
 "DaVinci" = "DaVinci";
 "DaVinci Resolve" = "DaVinci Resolve";
 "DaVinci Resolve is rarely where photos are used, so they are left out of the total unless you ask." = "Foto's worden zelden in DaVinci Resolve gebruikt, dus ze tellen niet mee in het totaal tenzij je dat vraagt.";
+"Details (I)" = "Details (I)";
 "Details on or off" = "Details aan of uit";
 "Disk" = "Schijf";
 "Disk not connected" = "Schijf niet verbonden";
@@ -222,6 +223,7 @@
 "Eject the card" = "Werp de kaart uit";
 "Eject the card when every file checks out" = "Werp de kaart uit als elk bestand klopt";
 "Every card you copy is listed here, with what it held and how it checked out." = "Elke kaart die je kopieert staat hier, met wat erop stond en hoe de controle ging.";
+"Every clip here is used by a project, or protected" = "Elke clip hier wordt door een project gebruikt, of is beschermd";
 "Everything" = "Alles";
 "Everything new goes to the disk straight away. You can look through it afterwards and move what you do not need to the Trash." = "Alles wat nieuw is gaat meteen naar de schijf. Je kunt er daarna doorheen kijken en wat je niet nodig hebt naar de prullenbak verplaatsen.";
 "Everything on it is already on your disk." = "Alles erop staat al op je schijf.";
@@ -229,8 +231,10 @@
 "Exposure" = "Belichting";
 "File" = "Bestand";
 "Files checked" = "Bestanden gecontroleerd";
+"Filter" = "Filter";
 "Finder" = "Finder";
 "Five seconds back or forward" = "Vijf seconden terug of vooruit";
+"Folder" = "Map";
 "Folder on that disk" = "Map op die schijf";
 "Folder on the disk (empty is the top)" = "Map op de schijf (leeg is de bovenste)";
 "Folders named SD 1, SD 2 and so on on your disk are always included. Add other places that hold footage, like a project's footage folder." = "Mappen met de namen SD 1, SD 2 enzovoort op je schijf doen altijd mee. Voeg andere plekken met beeld toe, zoals de beeldmap van een project.";
@@ -263,6 +267,7 @@
 "Kept" = "Behouden";
 "Kept %@" = "%@ behouden";
 "Kept %lld" = "%lld behouden";
+"Keys" = "Toetsen";
 "Kind" = "Soort";
 "Later" = "Later";
 "Leave out" = "Overslaan";
@@ -293,6 +298,7 @@
 "Missing: %@" = "Ontbreekt: %@";
 "Missing: %lld" = "Ontbreekt: %lld";
 "Month" = "Maand";
+"More" = "Meer";
 "More folders to look through" = "Meer mappen om doorheen te kijken";
 "Move %@ clips (%@) to the Trash" = "Verplaats %@ clips (%@) naar de prullenbak";
 "Move %@ clips (%lld) to the Trash" = "Verplaats %@ clips (%lld) naar de prullenbak";
@@ -360,7 +366,7 @@
 "Per month" = "Per maand";
 "Photos" = "Foto's";
 "Photos less sharp than" = "Foto's minder scherp dan";
-"Pick one above to look through it." = "Kies hierboven een map om doorheen te kijken.";
+"Pick one in the sidebar to look through it." = "Kies in de zijbalk een map om doorheen te kijken.";
 "Picture profile" = "Beeldprofiel";
 "Play a clip again when it ends" = "Speel een clip opnieuw af als hij eindigt";
 "Play or pause" = "Afspelen of pauzeren";
@@ -390,7 +396,6 @@
 "Read-only. The project files are copied first, so Resolve is never disturbed." = "Alleen lezen. De projectbestanden worden eerst gekopieerd, dus Resolve wordt nooit gestoord.";
 "Reading %@..." = "%@ lezen...";
 "Reading %lld..." = "%lld lezen...";
-"Reading folders..." = "Mappen lezen...";
 "Reading projects..." = "Projecten lezen...";
 "Reading what is on it..." = "Kijken wat erop staat...";
 "Recent" = "Recent";
@@ -439,6 +444,7 @@
 "Show in the Dock" = "Toon in het Dock";
 "Show log footage with" = "Toon log-beeld met";
 "Show what was copied before" = "Toon wat eerder is gekopieerd";
+"Size" = "Grootte";
 "Some files did not arrive intact." = "Sommige bestanden zijn niet heel aangekomen.";
 "Some projects could not be read." = "Sommige projecten konden niet worden gelezen.";
 "Sound off (M)" = "Geluid uit (M)";
@@ -500,6 +506,7 @@
 "Undo (Z)" = "Ongedaan maken (Z)";
 "Undone: %@" = "Ongedaan gemaakt: %@";
 "Undone: %lld" = "Ongedaan gemaakt: %lld";
+"Up next" = "Hierna";
 "Update and restart" = "Werk bij en start opnieuw";
 "Updates" = "Updates";
 "Updates come from github.com/Marukiee/Rushes. Each one is checked against a signature before it is installed." = "Updates komen van github.com/Marukiee/Rushes. Elke update wordt met een handtekening gecontroleerd voordat hij wordt geïnstalleerd.";
@@ -518,7 +525,6 @@
 "What's new" = "Wat is nieuw";
 "When a card and your disk are in" = "Als een kaart en je schijf erin zitten";
 "Where the cards go" = "Waar de kaarten heen gaan";
-"You can free up" = "Je kunt vrijmaken";
 "You have the newest version" = "Je hebt de nieuwste versie";
 "You have version %@" = "Je hebt versie %@";
 "You have version %lld" = "Je hebt versie %lld";

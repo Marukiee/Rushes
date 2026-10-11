@@ -58,13 +58,15 @@ extension ResolveIndex.Usage {
 struct ClipGrid: View {
     var model: ReviewModel
     var showUsage = false
+    /// Room kept free at the top for a control that floats over the list. The clips pass under it as they scroll.
+    var topInset: CGFloat = 0
 
-    private let columns = [GridItem(.adaptive(minimum: 150, maximum: 220), spacing: 10)]
+    private let columns = [GridItem(.adaptive(minimum: 120, maximum: 200), spacing: Space.s)]
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVGrid(columns: columns, spacing: 10, pinnedViews: [.sectionHeaders]) {
+                LazyVGrid(columns: columns, spacing: Space.s, pinnedViews: [.sectionHeaders]) {
                     ForEach(model.sections) { section in
                         Section {
                             ForEach(section.items) { item in
@@ -76,15 +78,17 @@ struct ClipGrid: View {
                         }
                     }
                 }
-                .padding(.horizontal, 14)
-                .padding(.bottom, 24)
+                .padding(.bottom, Space.xl)
                 .background(GeometryReader { geometry in
                     Color.clear.onChange(of: geometry.size.width, initial: true) { _, width in
-                        model.gridColumns = max(1, Int((width + 10) / (150 + 10)))
+                        model.gridColumns = max(1, Int((width + 8) / (120 + 8)))
                     }
                 })
             }
             .scrollIndicators(.automatic)
+            .contentMargins(.top, topInset, for: .scrollContent)
+            .contentMargins(.top, topInset, for: .scrollIndicators)
+            .scrollEdgeEffectStyle(.soft, for: .top)
             .onChange(of: model.focusID) { _, id in
                 if let id { withAnimation(.rushes) { proxy.scrollTo(id, anchor: .center) } }
             }
@@ -98,16 +102,16 @@ private struct DayHeader: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Text(Format.day(section.day)).font(.callout.weight(.semibold))
+            Text(Format.shortDay(section.day)).font(.callout.weight(.semibold)).lineLimit(1)
             Text("\(section.items.count)").font(.callout.monospacedDigit()).foregroundStyle(.secondary)
             Text(Format.bytes(section.items.reduce(0) { $0 + $1.totalBytes })).font(.caption).foregroundStyle(.tertiary)
             Spacer()
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 7)
-        .rushesGlass(.capsule)
-        .padding(.top, 8)
-        .padding(.bottom, 2)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.s)
+        .background(.regularMaterial, in: Capsule())
+        .padding(.top, Space.xs)
+        .padding(.bottom, Space.xs)
     }
 }
 
@@ -115,11 +119,13 @@ struct ClipCell: View {
     var model: ReviewModel
     let item: MediaItem
     var showUsage: Bool
+    private var preview: HoverPreview { HoverPreview.shared }
 
     @LocalState private var image: CGImage?
-    @LocalState private var strip: [CGImage] = []
-    @LocalState private var scrubIndex: Int?
     @LocalState private var hovering = false
+    @LocalState private var width: CGFloat = 160
+    @LocalState private var videoReady = false
+    @LocalState private var pointerX: CGFloat = 0
 
     var body: some View {
         let selected = model.selection.contains(item.id)
@@ -131,14 +137,20 @@ struct ClipCell: View {
             .aspectRatio(16 / 9, contentMode: .fit)
             .overlay {
                 ZStack {
-                    if let shown = scrubIndex.flatMap({ strip.indices.contains($0) ? strip[$0] : nil }) ?? image {
-                        Image(decorative: shown, scale: 1)
+                    if let image {
+                        Image(decorative: image, scale: 1)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                     } else {
                         Image(systemName: item.kind == .video ? "film" : "photo")
                             .font(.title2)
                             .foregroundStyle(.white.opacity(0.25))
+                    }
+                    // The pointer over a clip skims it, and a pointer at rest plays it, the way DaVinci Resolve does.
+                    if item.kind == .video, preview.activeID == item.id, let player = preview.player(for: item.id) {
+                        HoverSurface(player: player) { ready in withAnimation(.rushesFade) { videoReady = ready } }
+                            .opacity(videoReady ? 1 : 0)
+                        skimLine
                     }
                     if verdict == .skip {
                         Rectangle().fill(Color.black.opacity(0.55))
@@ -148,28 +160,33 @@ struct ClipCell: View {
             }
             .clipShape(shape)
         .overlay {
+            // The pointer, the choice and the one in view are all shown inside the picture's own edge. Nothing grows or throws a
+            // shadow, because the list clips at its sides and a zoomed cell would lose its edge there.
             shape.strokeBorder(
-                focused ? Palette.indigoLight : (selected ? Palette.indigo : Color.white.opacity(0.06)),
-                lineWidth: focused ? 3 : (selected ? 2 : 1)
+                focused ? Palette.accent : (selected ? Palette.accent.opacity(0.7) : (hovering ? Color.primary.opacity(0.45) : Color.primary.opacity(0.08))),
+                lineWidth: focused ? 3 : (selected || hovering ? 2 : 0.5)
             )
         }
-        .shadow(color: .black.opacity(hovering ? 0.28 : 0.10), radius: hovering ? 10 : 4, y: hovering ? 5 : 2)
-        .scaleEffect(hovering && !focused ? 1.02 : 1)
-        .animation(.rushesSpringy, value: hovering)
+        .animation(.rushesFade, value: hovering)
         .animation(.rushesFade, value: verdict)
         .contentShape(shape)
         .onTapGesture {
             let flags = NSEvent.modifierFlags
             model.focus(item.id, extend: flags.contains(.shift), toggle: flags.contains(.command))
         }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .onContinuousHover { phase in
             switch phase {
             case let .active(point):
                 hovering = true
-                if item.kind == .video { scrub(at: point.x) }
+                pointerX = point.x
+                if item.kind == .video {
+                    preview.hover(item, root: model.root, at: Double(point.x / max(width, 1)), knownDuration: model.metadata[item.id]?.duration)
+                }
             case .ended:
                 hovering = false
-                scrubIndex = nil
+                videoReady = false
+                preview.end(item.id)
             }
         }
         .task(id: item.id) {
@@ -178,16 +195,20 @@ struct ClipCell: View {
         .help(item.name)
     }
 
-    private func scrub(at x: CGFloat) {
-        if strip.isEmpty {
-            Task {
-                let frames = await Thumbnailer.shared.strip(for: item, root: model.root, count: 12, maxPixel: 320)
-                strip = frames
-            }
-            return
+    /// The playhead of the skimming: a thin line where the pointer is, with the time it stands for.
+    private var skimLine: some View {
+        ZStack(alignment: .leading) {
+            Rectangle().fill(.white.opacity(0.9)).frame(width: 1.5).shadow(radius: 2).offset(x: pointerX)
+            Text(Format.timecode(preview.seconds))
+                .font(.system(size: 10, weight: .semibold).monospacedDigit())
+                .foregroundStyle(.white)
+                .padding(.horizontal, 5).padding(.vertical, 2)
+                .background(.black.opacity(0.55), in: Capsule())
+                .offset(x: min(max(pointerX + 6, 4), width - 44), y: 0)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+                .padding(.bottom, 6)
         }
-        let width: CGFloat = 170
-        scrubIndex = min(strip.count - 1, max(0, Int(x / width * CGFloat(strip.count))))
+        .allowsHitTesting(false)
     }
 
     @ViewBuilder

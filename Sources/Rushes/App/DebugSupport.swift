@@ -111,7 +111,8 @@ enum DebugSupport {
     static func snapshot(into directory: URL, prefix: String = "") {
         var count = 0
         for window in NSApp.windows where window.isVisible {
-            guard let view = window.contentView, view.bounds.width > 50 else { continue }
+            // The theme frame around the content, so the toolbar is in the picture too.
+            guard let view = window.contentView?.superview ?? window.contentView, view.bounds.width > 50 else { continue }
             guard let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { continue }
             view.cacheDisplay(in: view.bounds, to: rep)
             // The window's own background is not part of what a view draws, so it is put underneath.
@@ -132,7 +133,8 @@ enum DebugSupport {
             try? png.write(to: directory.appendingPathComponent("\(prefix)window-\(count)-\(name).png"))
             count += 1
         }
-        try? "\(count) windows\n".write(to: directory.appendingPathComponent("snapshot.txt"), atomically: true, encoding: .utf8)
+        let numbers = NSApp.windows.filter(\.isVisible).map { "\($0.windowNumber)" }.joined(separator: " ")
+        try? "\(count) windows\n\(numbers)\n".write(to: directory.appendingPathComponent("snapshot.txt"), atomically: true, encoding: .utf8)
     }
 
     private static func showPanelWindow() {

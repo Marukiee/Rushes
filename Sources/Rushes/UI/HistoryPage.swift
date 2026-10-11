@@ -10,7 +10,6 @@ struct HistoryPage: View {
         let records = app.history
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                Text("Imports").font(.largeTitle.weight(.bold)).padding(.top, 6)
                 if records.isEmpty {
                     EmptyState(symbol: "clock.arrow.circlepath", title: "Nothing copied yet", text: "Every card you copy is listed here, with what it held and how it checked out.")
                         .frame(height: 320)
@@ -28,7 +27,9 @@ struct HistoryPage: View {
             }
             .padding(.horizontal, 26)
             .padding(.bottom, 30)
+            .padding(.top, 6)
         }
+        .navigationTitle("Imports")
     }
 }
 
@@ -43,7 +44,7 @@ private struct Totals: View {
         HStack(spacing: 14) {
             StatTile(title: "Copied", value: Format.bytes(copied), detail: String(localized: "\(done.count) cards"), symbol: "square.and.arrow.down.fill")
             StatTile(title: "Left out", value: Format.bytes(saved), detail: String(localized: "never touched your disk"), symbol: "leaf.fill", tint: VerdictStyle.keep)
-            StatTile(title: "Files checked", value: files.formatted(), detail: String(localized: "every one read back"), symbol: "checkmark.shield.fill", tint: Palette.rose)
+            StatTile(title: "Files checked", value: files.formatted(), detail: String(localized: "every one read back"), symbol: "checkmark.shield.fill", tint: Palette.roseInk)
         }
     }
 }
@@ -102,8 +103,8 @@ struct HistoryRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 8) {
                     Text(record.label).font(.callout.weight(.semibold))
-                    if record.backupFolder != nil { Chip(text: String(localized: "2 copies"), symbol: "square.on.square", tint: Palette.indigoLight) }
-                    if record.sentToResolve { Chip(text: "DaVinci", symbol: "film.stack", tint: Palette.rose) }
+                    if record.backupFolder != nil { Chip(text: String(localized: "2 copies"), symbol: "square.on.square", tint: Palette.accent) }
+                    if record.sentToResolve { Chip(text: "DaVinci", symbol: "film.stack", tint: Palette.roseInk) }
                 }
                 Text(detail).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                 if let message { Text(message).font(.caption).foregroundStyle(.tertiary).lineLimit(2) }
