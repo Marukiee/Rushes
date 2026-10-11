@@ -334,7 +334,9 @@ final class ReviewModel {
         enrichDone = 0
         let items = allItems
         let root = root
-        let settings = Prefs.suggestions
+        // Suggestions are for a card that is about to be copied. A folder on the disk only needs dates and durations.
+        var settings = Prefs.suggestions
+        if mode == .library { settings.enabled = false }
         enrichTask = Task { [weak self] in
             var pending = items.makeIterator()
             await withTaskGroup(of: (String, MediaMetadata, ClipAnalysis?).self) { group in

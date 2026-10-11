@@ -39,12 +39,10 @@ struct MenuBarPanel: View {
             if let job = app.job {
                 ImportCard(job: job, compact: true)
             } else if let session = app.sessions.first(where: { $0.phase == .ready && $0.newItems > 0 && $0.stage != .imported }) {
-                VStack(spacing: 8) {
-                    HStack(spacing: 8) {
-                        ActionButton(title: "Look through", symbol: "eye", prominent: true, wide: true) { app.openReview(session); NSApp.activate() }
-                        ActionButton(title: "Copy all", symbol: "square.and.arrow.down", wide: true) { app.startImport(session, everything: true) }
-                            .disabled(app.destination == nil)
-                    }
+                ButtonRow(spacing: 8) {
+                    ActionButton(title: "Review", symbol: "eye", prominent: true, wide: true) { app.openReview(session); NSApp.activate() }
+                    ActionButton(title: "Copy all", symbol: "square.and.arrow.down", wide: true) { app.startImport(session, everything: true) }
+                        .disabled(app.destination == nil)
                 }
             }
 

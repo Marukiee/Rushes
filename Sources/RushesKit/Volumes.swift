@@ -63,13 +63,22 @@ public enum Volumes {
             name: values.volumeName ?? url.lastPathComponent,
             uuid: values.volumeUUIDString ?? "",
             capacity: UInt64(max(0, values.volumeTotalCapacity ?? 0)),
-            available: UInt64(max(0, values.volumeAvailableCapacityForImportantUsage ?? Int64(values.volumeAvailableCapacity ?? 0))),
+            available: availableBytes(url: url, important: values.volumeAvailableCapacityForImportantUsage, plain: values.volumeAvailableCapacity),
             isRemovable: values.volumeIsRemovable ?? false,
             isEjectable: values.volumeIsEjectable ?? false,
             isInternal: values.volumeIsInternal ?? false,
             isReadOnly: values.volumeIsReadOnly ?? false,
             format: values.volumeLocalizedFormatDescription ?? ""
         )
+    }
+
+    /// The "important usage" figure is 0 on disks that are not APFS, so it is only believed when it is not.
+    static func availableBytes(url: URL, important: Int64?, plain: Int?) -> UInt64 {
+        if let important, important > 0 { return UInt64(important) }
+        if let plain, plain > 0 { return UInt64(plain) }
+        var info = statfs()
+        if statfs(url.path, &info) == 0 { return UInt64(info.f_bavail) * UInt64(info.f_bsize) }
+        return 0
     }
 
     /// A volume that is plausible as the disk to copy to: writable, not the card itself, with room to speak of.

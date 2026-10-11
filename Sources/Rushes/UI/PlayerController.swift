@@ -15,6 +15,8 @@ final class PlayerController {
     private(set) var rate: Float = 0
     private(set) var lutName: String?
     private(set) var failed: String?
+    /// Width over height of what is playing, as soon as the player knows it, so the picture can be shown without black bars.
+    private(set) var videoAspect: CGFloat?
     var muted: Bool {
         didSet { player.isMuted = muted }
     }
@@ -22,6 +24,7 @@ final class PlayerController {
     nonisolated(unsafe) private var timeObserver: Any?
     nonisolated(unsafe) private var endObserver: NSObjectProtocol?
     private var statusObservation: NSKeyValueObservation?
+    private var sizeObservation: NSKeyValueObservation?
     private var rateObservation: NSKeyValueObservation?
     private var loops = true
     private var loadID = 0
@@ -57,6 +60,7 @@ final class PlayerController {
         loadID += 1
         let current = loadID
         failed = nil
+        videoAspect = nil
         currentTime = 0
         duration = 0
         loops = loop
@@ -91,6 +95,14 @@ final class PlayerController {
             Task { @MainActor in
                 guard let self, current == self.loadID else { return }
                 if item.status == .failed { self.failed = item.error?.localizedDescription ?? String(localized: "This clip cannot be played") }
+            }
+        }
+        sizeObservation = item.observe(\.presentationSize, options: [.initial, .new]) { [weak self] item, _ in
+            let size = item.presentationSize
+            guard size.width > 1, size.height > 1 else { return }
+            Task { @MainActor in
+                guard let self, current == self.loadID else { return }
+                self.videoAspect = size.width / size.height
             }
         }
         player.replaceCurrentItem(with: item)
@@ -137,6 +149,7 @@ final class PlayerController {
 
     func unload() {
         loadID += 1
+        videoAspect = nil
         player.pause()
         player.replaceCurrentItem(with: nil)
         currentTime = 0

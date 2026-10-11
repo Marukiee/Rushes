@@ -61,7 +61,7 @@ final class CardPromptController {
         }
         host?.layoutSubtreeIfNeeded()
         let size = host?.fittingSize ?? NSSize(width: 400, height: 150)
-        position(panel, size: NSSize(width: 408, height: max(110, size.height)))
+        position(panel, size: NSSize(width: 448, height: max(110, size.height)))
         // The system draws the shadow from what is on the window, so it follows the rounded shape and is never cut off.
         panel.invalidateShadow()
         if !panel.isVisible {
@@ -116,7 +116,7 @@ private struct PromptView: View {
     var body: some View {
         content
             .padding(18)
-            .frame(width: 400)
+            .frame(width: 440)
             .rushesGlass(RoundedRectangle(cornerRadius: 32, style: .continuous))
             .padding(4)
             .environment(model)
@@ -136,10 +136,10 @@ private struct PromptView: View {
         case let .ask(session):
             VStack(alignment: .leading, spacing: 14) {
                 header(card: true, disk: true, title: String(localized: "\(session.name) and \(model.destination?.name ?? String(localized: "your disk")) are in"), subtitle: AppModel.recognitionSummary(session, destination: model.destination)) { EmptyView() }
-                HStack(spacing: 10) {
+                ButtonRow {
                     let review = Prefs.cardBehavior != .copyAll
-                    ActionButton(title: "Look through", symbol: "eye", prominent: review, wide: true) { model.openReview(session) }
-                    ActionButton(title: "Copy everything", symbol: "square.and.arrow.down", prominent: !review, wide: true) { model.startImport(session, everything: true) }
+                    ActionButton(title: "Review", symbol: "eye", prominent: review, wide: true) { model.openReview(session) }
+                    ActionButton(title: "Copy all", symbol: "square.and.arrow.down", prominent: !review, wide: true) { model.startImport(session, everything: true) }
                 }
                 HStack {
                     Spacer()
@@ -150,7 +150,7 @@ private struct PromptView: View {
         case let .nothingNew(session):
             VStack(alignment: .leading, spacing: 14) {
                 header(card: true, disk: true, title: String(localized: "Nothing new on \(session.name)"), subtitle: String(localized: "Everything on it is already on your disk.")) { EmptyView() }
-                HStack(spacing: 10) {
+                ButtonRow {
                     ActionButton(title: "Eject", symbol: "eject.fill", prominent: true, wide: true) { model.eject(session) }
                     ActionButton(title: "Close", symbol: "xmark", wide: true) { model.dismiss(session) }
                 }

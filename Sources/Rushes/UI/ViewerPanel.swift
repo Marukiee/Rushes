@@ -13,13 +13,24 @@ struct ViewerPanel: View {
     @LocalState private var showDetails = true
 
     var body: some View {
-        VStack(spacing: 12) {
-            stage
-            VerdictBar(model: model, onKeep: { perform(.keep) }, onSkip: { perform(.skip) })
-            if showDetails, let item = model.focusItem {
-                DetailsView(model: model, item: item)
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+        GeometryReader { geometry in
+            // The picture is as big as the width allows, but never more than about two thirds of the height, so a tall photo
+            // leaves room for the buttons. The frame is exactly the shape of the picture: no bars, and the border goes round it.
+            let tallest = max(240, geometry.size.height * 0.66)
+            let height = min(geometry.size.width / aspect, tallest)
+            let width = height * aspect
+            VStack(spacing: 12) {
+                stage
+                    .frame(width: width, height: height)
+                    .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+                    .overlay { RoundedRectangle(cornerRadius: 26, style: .continuous).strokeBorder(Color.white.opacity(0.08), lineWidth: 1) }
+                VerdictBar(model: model, onKeep: { perform(.keep) }, onSkip: { perform(.skip) })
+                if showDetails, let item = model.focusItem {
+                    DetailsView(model: model, item: item)
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .animation(.rushes, value: showDetails)
         .task(id: model.focusID) { await load() }
@@ -39,6 +50,21 @@ struct ViewerPanel: View {
     }
 
     // MARK: Stage
+
+    /// Width over height of the picture being shown.
+    private var aspect: CGFloat {
+        guard let item = model.focusItem else { return 16 / 9 }
+        switch item.kind {
+        case .photo:
+            if let photo, photo.height > 0 { return CGFloat(photo.width) / CGFloat(photo.height) }
+        case .video:
+            if let known = player.videoAspect { return known }
+        case .audio:
+            break
+        }
+        if let meta = model.metadata[item.id], let width = meta.width, let height = meta.height, height > 0 { return CGFloat(width) / CGFloat(height) }
+        return 16 / 9
+    }
 
     private var stage: some View {
         ZStack {
@@ -76,10 +102,6 @@ struct ViewerPanel: View {
                     .foregroundStyle(.white.opacity(0.5))
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .frame(minHeight: 260)
-        .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .overlay { RoundedRectangle(cornerRadius: 26, style: .continuous).strokeBorder(Color.white.opacity(0.08), lineWidth: 1) }
         .animation(.rushesBouncy, value: flash)
     }
 
@@ -209,9 +231,17 @@ struct VerdictBar: View {
     let onSkip: () -> Void
 
     var body: some View {
+        // The words and the keys when there is room, the symbols alone when there is not. A label is never cut off.
+        ViewThatFits(in: .horizontal) {
+            bar(words: true)
+            bar(words: false)
+        }
+    }
+
+    private func bar(words: Bool) -> some View {
         let library = model.mode == .library
         let verdict = model.focusItem.map { model.verdict(of: $0) } ?? .undecided
-        GlassEffectContainer(spacing: 10) {
+        return GlassEffectContainer(spacing: 10) {
             HStack(spacing: 10) {
                 Button { model.undo() } label: {
                     Image(systemName: "arrow.uturn.backward").frame(width: 20)
@@ -221,37 +251,37 @@ struct VerdictBar: View {
                 .disabled(!model.canUndo)
                 .help("Undo (Z)")
 
-                Button(action: onSkip) {
-                    HStack {
-                        Image(systemName: library ? "trash" : "xmark")
-                        Text(library ? LocalizedStringKey("Move to Trash") : LocalizedStringKey("Leave out"))
-                        Spacer(minLength: 0)
-                        KeyCap("X")
-                    }
-                    .font(.callout.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-                }
-                .prominentButtonStyle()
-                .tint(VerdictStyle.skip.opacity(verdict == .skip ? 1 : 0.78))
-                .controlSize(.large)
-
+                verdictButton(
+                    symbol: library ? "trash" : "xmark", title: library ? "Move to Trash" : "Leave out", key: "X",
+                    tint: VerdictStyle.skip.opacity(verdict == .skip ? 1 : 0.78), words: words, action: onSkip
+                )
                 StarRating(model: model)
-
-                Button(action: onKeep) {
-                    HStack {
-                        Image(systemName: library ? "lock" : "checkmark")
-                        Text(library ? LocalizedStringKey("Protect") : LocalizedStringKey("Keep"))
-                        Spacer(minLength: 0)
-                        KeyCap("⏎")
-                    }
-                    .font(.callout.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-                }
-                .prominentButtonStyle()
-                .tint(VerdictStyle.keep.opacity(verdict == .keep ? 1 : 0.78))
-                .controlSize(.large)
+                verdictButton(
+                    symbol: library ? "lock" : "checkmark", title: library ? "Protect" : "Keep", key: "\u{23CE}",
+                    tint: VerdictStyle.keep.opacity(verdict == .keep ? 1 : 0.78), words: words, action: onKeep
+                )
             }
         }
+    }
+
+    private func verdictButton(symbol: String, title: LocalizedStringKey, key: String, tint: Color, words: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: symbol)
+                if words {
+                    Text(title).lineLimit(1)
+                    KeyCap(key)
+                }
+            }
+            .font(.callout.weight(.semibold))
+            .fixedSize()
+            .frame(maxWidth: words ? .infinity : nil)
+            .padding(.horizontal, words ? 4 : 10)
+        }
+        .prominentButtonStyle()
+        .tint(tint)
+        .controlSize(.large)
+        .help(title)
     }
 }
 

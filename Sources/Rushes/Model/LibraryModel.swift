@@ -69,10 +69,12 @@ final class LibraryModel {
                 let scan = await Task.detached(priority: .utility) { FolderScanner.scan(root: root) }.value
                 if Task.isCancelled { break }
                 guard let self else { return }
-                self.add(scan: scan, previous: previous[root.path], index: index)
+                // The index of the moment, not the one from when the loading began: the projects may have been read since.
+                self.add(scan: scan, previous: previous[root.path], index: AppModel.shared.resolve.index)
                 self.loadedCount += 1
             }
             self?.isLoading = false
+            if let self { self.applyUsage(index: AppModel.shared.resolve.index) }
             self?.chooseStartingFolder()
             self?.findDuplicates()
         }

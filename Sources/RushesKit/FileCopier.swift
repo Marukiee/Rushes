@@ -326,6 +326,9 @@ public enum DiskSpace {
     public static func available(at url: URL) -> UInt64? {
         let values = try? url.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey, .volumeAvailableCapacityKey])
         if let important = values?.volumeAvailableCapacityForImportantUsage, important > 0 { return UInt64(important) }
-        return values?.volumeAvailableCapacity.map { UInt64($0) }
+        if let plain = values?.volumeAvailableCapacity, plain > 0 { return UInt64(plain) }
+        var info = statfs()
+        guard statfs(url.path, &info) == 0 else { return nil }
+        return UInt64(info.f_bavail) * UInt64(info.f_bsize)
     }
 }

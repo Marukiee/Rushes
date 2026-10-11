@@ -26,9 +26,8 @@ struct LibraryPage: View {
                     text: "Folders named SD 1, SD 2 and so on show up here. The first card you copy makes the first one."
                 )
             } else {
-                HStack(alignment: .top, spacing: 0) {
-                    FolderList()
-                        .frame(width: 290)
+                VStack(spacing: 0) {
+                    FolderStrip()
                     if let folder = library.selected {
                         VStack(spacing: 0) {
                             FolderHeader(
@@ -40,7 +39,7 @@ struct LibraryPage: View {
                         }
                         .id(folder.id)
                     } else {
-                        EmptyState(symbol: "square.grid.2x2", title: "Choose a folder", text: "Pick one on the left to look through it.")
+                        EmptyState(symbol: "square.grid.2x2", title: "Choose a folder", text: "Pick one above to look through it.")
                     }
                 }
             }
@@ -109,29 +108,33 @@ struct LibraryPage: View {
 
 // MARK: Folder list
 
-private struct FolderList: View {
+/// The folders along the top, with the space that could be freed next to them. A row across leaves the width for the clips.
+private struct FolderStrip: View {
     @Environment(AppModel.self) private var app
 
     var body: some View {
         let library = app.library
-        VStack(alignment: .leading, spacing: 12) {
-            SavingsTile()
-            ScrollView {
-                VStack(spacing: 8) {
+        HStack(alignment: .top, spacing: 12) {
+            SavingsTile().frame(width: 260)
+            ScrollView(.horizontal) {
+                HStack(alignment: .top, spacing: 8) {
                     ForEach(library.folders) { folder in
                         FolderRow(folder: folder, selected: library.selectedID == folder.id) { library.selectedID = folder.id }
+                            .frame(width: 230)
                     }
                     if library.isLoading {
                         HStack(spacing: 8) { ProgressView().controlSize(.small); Text("Reading folders...").font(.caption).foregroundStyle(.secondary) }
-                            .padding(8)
+                            .padding(12)
                     }
                 }
-                .padding(.bottom, 20)
+                .padding(.vertical, 2)
+                .padding(.trailing, 20)
             }
             .scrollIndicators(.never)
         }
         .padding(.leading, 20)
-        .padding(.trailing, 12)
+        .padding(.top, 8)
+        .padding(.bottom, 4)
     }
 }
 
@@ -140,16 +143,16 @@ private struct SavingsTile: View {
 
     var body: some View {
         let library = app.library
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 4) {
             Text("You can free up").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
             Text(Format.bytes(library.reclaimableBytes))
-                .font(.system(size: 30, weight: .bold, design: .rounded).monospacedDigit())
+                .font(.system(size: 28, weight: .bold, design: .rounded).monospacedDigit())
                 .foregroundStyle(Palette.rose)
                 .contentTransition(.numericText())
             Text(app.resolve.hasIndex
                  ? Format.count(library.reclaimableCount, one: String(localized: "clip that no project uses"), other: String(localized: "clips that no project uses"))
-                 : "Scan DaVinci Resolve to find out which clips are used")
-                .font(.caption).foregroundStyle(.secondary)
+                 : String(localized: "Scan DaVinci Resolve to find out which clips are used"))
+                .font(.caption).foregroundStyle(.secondary).lineLimit(2)
             HStack(spacing: 6) {
                 if app.resolve.isScanning {
                     ProgressView(value: app.resolve.scanProgress).controlSize(.small)
@@ -157,16 +160,18 @@ private struct SavingsTile: View {
                     Button { Task { await app.resolve.scan(); app.library.recount(index: app.resolve.index) } } label: {
                         Label(app.resolve.hasIndex ? "Scan again" : "Scan DaVinci", systemImage: "arrow.triangle.2.circlepath")
                             .font(.caption.weight(.semibold))
+                            .fixedSize()
                     }
                     .glassButtonStyle()
                     .controlSize(.small)
                 }
                 if app.resolve.hasIndex {
-                    Text(app.resolve.index.scannedAt.formatted(.relative(presentation: .named))).font(.caption2).foregroundStyle(.tertiary)
+                    Text(app.resolve.index.scannedAt.formatted(.relative(presentation: .named))).font(.caption2).foregroundStyle(.tertiary).lineLimit(1)
                 }
             }
+            .padding(.top, 2)
         }
-        .padding(16)
+        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .surface(radius: Metrics.card, tint: Palette.rose)
     }
@@ -190,7 +195,7 @@ private struct FolderRow: View {
                     Text("\(folder.itemCount) items").font(.caption).foregroundStyle(.secondary)
                     Spacer(minLength: 4)
                     if folder.reclaimableBytes > 0 {
-                        Text("\(Format.bytes(folder.reclaimableBytes)) free to take")
+                        Text("\(Format.bytes(folder.reclaimableBytes)) to free")
                             .font(.caption.weight(.semibold)).foregroundStyle(Palette.rose)
                     }
                 }

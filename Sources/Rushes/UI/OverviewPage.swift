@@ -211,11 +211,12 @@ private struct WaitingCard: View {
                     Text(AppModel.recognitionSummary(session, destination: app.destination)).font(.callout).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 12)
-                HStack(spacing: 10) {
-                    ActionButton(title: "Look through", symbol: "eye", prominent: true) { app.openReview(session) }
-                    ActionButton(title: "Copy everything", symbol: "square.and.arrow.down") { app.startImport(session, everything: true) }
+                ButtonRow {
+                    ActionButton(title: "Review", symbol: "eye", prominent: true) { app.openReview(session) }
+                    ActionButton(title: "Copy all", symbol: "square.and.arrow.down") { app.startImport(session, everything: true) }
                         .disabled(app.destination == nil)
                 }
+                .fixedSize()
             }
         }
     }
@@ -237,7 +238,7 @@ private struct SavingsCard: View {
                         .font(.callout).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 12)
-                ActionButton(title: "Look through them", symbol: "arrow.right", prominent: true, tint: Palette.roseDeep) {
+                ActionButton(title: "Review them", symbol: "arrow.right", prominent: true, tint: Palette.roseDeep) {
                     app.page = .library
                     if let best = library.folders.max(by: { $0.reclaimableBytes < $1.reclaimableBytes }) {
                         library.selectedID = best.id

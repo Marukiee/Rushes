@@ -75,4 +75,6 @@ T = {
 "Sweden": "Zweden",
 "Rushes": "Rushes",
 "Overview": "Overzicht",
+"Pick one above to look through it.": "Kies hierboven een map om doorheen te kijken.",
+"Review them": "Bekijk ze",
 }

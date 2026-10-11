@@ -31,7 +31,6 @@
 "%@ free of %lld" = "%@ vrij van %lld";
 "%@ free on %@" = "%@ vrij op %@";
 "%@ free on %lld" = "%@ vrij op %lld";
-"%@ free to take" = "%@ om terug te krijgen";
 "%@ in projects" = "%@ in projecten";
 "%@ in your card folders are in no DaVinci Resolve project." = "%@ in je kaartmappen staan in geen enkel DaVinci Resolve-project.";
 "%@ is in" = "%@ zit erin";
@@ -51,6 +50,7 @@
 "%@ of %@ files" = "%@ van %@ bestanden";
 "%@ of %lld" = "%@ van %lld";
 "%@ of %lld files" = "%@ van %lld bestanden";
+"%@ to free" = "%@ vrij te maken";
 "%@ unused" = "%@ ongebruikt";
 "%@ were already there" = "%@ stonden er al";
 "%@% of the median" = "%@% van het gemiddelde";
@@ -87,7 +87,6 @@
 "%lld free of %lld" = "%lld vrij van %lld";
 "%lld free on %@" = "%lld vrij op %@";
 "%lld free on %lld" = "%lld vrij op %lld";
-"%lld free to take" = "%lld om terug te krijgen";
 "%lld in projects" = "%lld in projecten";
 "%lld in your card folders are in no DaVinci Resolve project." = "%lld in je kaartmappen staan in geen enkel DaVinci Resolve-project.";
 "%lld is in" = "%lld zit erin";
@@ -107,6 +106,7 @@
 "%lld of %@ files" = "%lld van %@ bestanden";
 "%lld of %lld" = "%lld van %lld";
 "%lld of %lld files" = "%lld van %lld bestanden";
+"%lld to free" = "%lld vrij te maken";
 "%lld unused" = "%lld ongebruikt";
 "%lld were already there" = "%lld stonden er al";
 "%lld% of the median" = "%lld% van het gemiddelde";
@@ -280,9 +280,7 @@
 "Look at my DaVinci Resolve projects" = "Kijk in mijn DaVinci Resolve-projecten";
 "Look at my Resolve projects" = "Kijk in mijn Resolve-projecten";
 "Look at what was copied" = "Bekijk wat is gekopieerd";
-"Look through" = "Bekijk";
 "Look through it" = "Bekijk de map";
-"Look through them" = "Bekijk ze";
 "Looking at %@ of %@" = "%@ van %@ bekeken";
 "Looking at %@ of %lld" = "%@ van %lld bekeken";
 "Looking at %lld of %@" = "%lld van %@ bekeken";
@@ -362,7 +360,7 @@
 "Per month" = "Per maand";
 "Photos" = "Foto's";
 "Photos less sharp than" = "Foto's minder scherp dan";
-"Pick one on the left to look through it." = "Kies links een map om doorheen te kijken.";
+"Pick one above to look through it." = "Kies hierboven een map om doorheen te kijken.";
 "Picture profile" = "Beeldprofiel";
 "Play a clip again when it ends" = "Speel een clip opnieuw af als hij eindigt";
 "Play or pause" = "Afspelen of pauzeren";
@@ -412,6 +410,8 @@
 "Resolve is not installed" = "Resolve is niet geïnstalleerd";
 "Resolve is open and answers" = "Resolve is open en antwoordt";
 "Resolve writes a project to disk when you save it (Cmd S). Clips you used since the last save show as unused until then." = "Resolve schrijft een project naar schijf als je het opslaat (Cmd S). Clips die je sinds de laatste keer opslaan hebt gebruikt staan tot dan als ongebruikt.";
+"Review" = "Bekijk";
+"Review them" = "Bekijk ze";
 "Room for about %@ more cards like your last ones" = "Ruimte voor ongeveer %@ kaarten zoals je laatste";
 "Room for about %lld more cards like your last ones" = "Ruimte voor ongeveer %lld kaarten zoals je laatste";
 "Rushes" = "Rushes";

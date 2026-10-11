@@ -43,6 +43,7 @@ struct ActionButton: View {
     let symbol: String
     var prominent = false
     var tint: Color = Palette.indigo
+    /// Takes the width it is given, so buttons side by side come out the same size. The label shrinks a little before it is ever cut off.
     var wide = false
     let action: () -> Void
 
@@ -54,6 +55,10 @@ struct ActionButton: View {
         let button = Button(action: action) {
             Label(title, systemImage: symbol)
                 .font(.callout.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(wide ? 0.8 : 1)
+                // A button is as wide as its words. A row that does not fit wraps or stacks (see ButtonRow), it never cuts one off.
+                .fixedSize(horizontal: !wide, vertical: false)
                 .frame(maxWidth: wide ? .infinity : nil)
         }
         if prominent {
@@ -69,6 +74,19 @@ struct ActionButton: View {
                 .onHover { hovering = $0 }
         } else {
             button.glassButtonStyle().controlSize(.large)
+        }
+    }
+}
+
+/// Buttons in a row when they fit, one under the other when they do not. Never a label cut off.
+struct ButtonRow<Content: View>: View {
+    var spacing: CGFloat = 10
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: spacing) { content }
+            VStack(spacing: spacing) { content }
         }
     }
 }

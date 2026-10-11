@@ -81,6 +81,8 @@ def literals(line: str):
 
 
 def is_ui_text(text: str, line: str) -> bool:
+    if text.startswith("\\u{"):
+        return False
     plain = re.sub(r"%(@|lld|\.1f)", "", text)
     if not re.search(r"[A-Za-z]{2}", plain):
         return False
