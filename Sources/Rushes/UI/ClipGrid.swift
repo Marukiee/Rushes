@@ -198,13 +198,13 @@ struct ClipCell: View {
     /// The playhead of the skimming: a thin line where the pointer is, with the time it stands for.
     private var skimLine: some View {
         ZStack(alignment: .leading) {
-            Rectangle().fill(.white.opacity(0.9)).frame(width: 1.5).shadow(radius: 2).offset(x: pointerX)
+            Rectangle().fill(.white.opacity(0.9)).frame(width: 1.5).shadow(radius: 2).offset(x: preview.playhead * width)
             Text(Format.timecode(preview.seconds))
                 .font(.system(size: 10, weight: .semibold).monospacedDigit())
                 .foregroundStyle(.white)
                 .padding(.horizontal, 5).padding(.vertical, 2)
                 .background(.black.opacity(0.55), in: Capsule())
-                .offset(x: min(max(pointerX + 6, 4), width - 44), y: 0)
+                .offset(x: min(max(preview.playhead * width + 6, 4), width - 44), y: 0)
                 .frame(maxHeight: .infinity, alignment: .bottom)
                 .padding(.bottom, 6)
         }

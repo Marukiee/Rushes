@@ -88,4 +88,5 @@ T = {
 "Details (I)": "Details (I)",
 "Size": "Grootte",
 "Filter": "Filter",
+"Saved %@": "Opgeslagen %@",
 }

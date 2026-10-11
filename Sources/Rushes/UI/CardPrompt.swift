@@ -119,6 +119,7 @@ private struct PromptView: View {
             .frame(width: 440)
             .rushesGlass(RoundedRectangle(cornerRadius: 32, style: .continuous))
             .padding(4)
+            .environment(\.inFloatingPanel, true)
             .environment(model)
     }
 

@@ -430,7 +430,8 @@
 "Rushes: imported" = "Rushes: geïmporteerd";
 "Same file name, other location" = "Zelfde bestandsnaam, andere plek";
 "Save name" = "Bewaar naam";
-"Saved " = "Opgeslagen ";
+"Saved %@" = "Opgeslagen %@";
+"Saved %lld" = "Opgeslagen %lld";
 "Scan DaVinci" = "Lees DaVinci";
 "Scan DaVinci Resolve to find out which clips are used" = "Lees DaVinci Resolve om te zien welke clips worden gebruikt";
 "Scan again" = "Lees opnieuw";

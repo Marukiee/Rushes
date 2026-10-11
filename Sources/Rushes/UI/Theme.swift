@@ -335,14 +335,26 @@ extension View {
         }
     }
 
-    @ViewBuilder
-    func glassButtonStyle() -> some View {
-        if DebugFlags.flatGlass { buttonStyle(.bordered) } else { buttonStyle(.glass) }
-    }
+    /// The system's bordered buttons for the content of a page, which are Liquid Glass capsules on this system. Glass buttons
+    /// proper are for what floats over content. In the little card in the corner the buttons draw themselves.
+    func glassButtonStyle() -> some View { modifier(RushesButtonStyle(prominent: false)) }
+
+    func prominentButtonStyle() -> some View { modifier(RushesButtonStyle(prominent: true)) }
+}
+
+private struct RushesButtonStyle: ViewModifier {
+    let prominent: Bool
+    @Environment(\.inFloatingPanel) private var floating
 
     @ViewBuilder
-    func prominentButtonStyle() -> some View {
-        if DebugFlags.flatGlass { buttonStyle(.borderedProminent) } else { buttonStyle(.glassProminent) }
+    func body(content: Content) -> some View {
+        if floating {
+            content.buttonStyle(CapsuleButtonStyle(prominent: prominent))
+        } else if prominent {
+            content.buttonStyle(.borderedProminent).buttonBorderShape(.capsule)
+        } else {
+            content.buttonStyle(.bordered).buttonBorderShape(.capsule)
+        }
     }
 }
 

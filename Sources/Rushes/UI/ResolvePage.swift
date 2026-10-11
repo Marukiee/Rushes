@@ -74,7 +74,7 @@ struct ResolvePage: View {
                                     .font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer(minLength: 8)
-                            Text("Saved " + project.modified.formatted(.relative(presentation: .named))).font(.caption).foregroundStyle(.tertiary)
+                            Text("Saved \(project.modified.formatted(.relative(presentation: .named)))").font(.caption).foregroundStyle(.tertiary)
                         }
                         .padding(.horizontal, 14)
                         .padding(.vertical, 9)
@@ -163,6 +163,7 @@ struct ResolvePage: View {
                             Text("In the project that is open in Resolve. If Resolve is closed, nothing is lost: send it later from the history.").font(.caption).foregroundStyle(.secondary)
                         }
                     }
+                    .toggleStyle(.switch)
                     Divider()
                     HStack {
                         Text("Bin name").frame(width: 110, alignment: .leading)
@@ -171,8 +172,8 @@ struct ResolvePage: View {
                     Text("Now: \(example)").font(.caption).foregroundStyle(.secondary).padding(.leading, 110)
                     Text("{datum} the day of shooting, {sd} like SD 5, {naam} the words after the number, {importdatum}, {jaar}, {maand}")
                         .font(.caption2).foregroundStyle(.tertiary).padding(.leading, 110)
-                    Toggle("A bin for each day of shooting", isOn: $perDay)
-                    Toggle("Also make a timeline of the video clips, in shooting order", isOn: $makeTimeline)
+                    Toggle("A bin for each day of shooting", isOn: $perDay).toggleStyle(.switch)
+                    Toggle("Also make a timeline of the video clips, in shooting order", isOn: $makeTimeline).toggleStyle(.switch)
                 }
             }
         }

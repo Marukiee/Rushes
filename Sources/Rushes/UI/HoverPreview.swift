@@ -36,6 +36,10 @@ final class HoverPreview {
 
     private(set) var activeID: String?
     private(set) var seconds: Double = 0
+    /// Where the playhead is, 0 to 1: under the pointer while skimming, moving along while the clip plays. The line in the
+    /// thumbnail is drawn here, so the picture and the line are always the same moment.
+    private(set) var playhead: Double = 0
+    private var timeObserver: (player: AVPlayer, token: Any)?
     private var slots: [Slot] = []
     private var restTask: Task<Void, Never>?
     private var observers: [String: NSObjectProtocol] = [:]
@@ -49,6 +53,8 @@ final class HoverPreview {
         if let previous = activeID, previous != item.id { slots.first { $0.id == previous }?.player.pause() }
         activeID = item.id
         slot.fraction = min(1, max(0, fraction))
+        stopFollowing()
+        playhead = slot.fraction
         scrub(slot)
         rest(slot)
     }
@@ -56,6 +62,7 @@ final class HoverPreview {
     func end(_ id: String) {
         guard activeID == id else { return }
         restTask?.cancel()
+        stopFollowing()
         slots.first { $0.id == id }?.player.pause()
         activeID = nil
     }
@@ -83,12 +90,11 @@ final class HoverPreview {
             old.player.replaceCurrentItem(with: nil)
             if let observer = observers.removeValue(forKey: old.id) { NotificationCenter.default.removeObserver(observer) }
         }
-        if slot.duration <= 0 {
-            Task {
-                if let loaded = try? await asset.load(.duration).seconds, loaded.isFinite {
-                    slot.duration = loaded
-                    if activeID == slot.id { scrub(slot) }
-                }
+        Task {
+            // What the file itself says wins over what the notes of the camera said, or the pointer and the picture drift apart.
+            if let loaded = try? await asset.load(.duration).seconds, loaded.isFinite, loaded > 0 {
+                slot.duration = loaded
+                if activeID == slot.id { scrub(slot) }
             }
         }
         return slot
@@ -102,9 +108,9 @@ final class HoverPreview {
         if slot.isSeeking { slot.pending = slot.fraction; return }
         slot.isSeeking = true
         slot.player.pause()
-        let time = CMTime(seconds: slot.fraction * slot.duration, preferredTimescale: 600)
-        let tolerance = CMTime(seconds: 0.12, preferredTimescale: 600)
-        slot.player.seek(to: time, toleranceBefore: tolerance, toleranceAfter: tolerance) { [weak self] _ in
+        // Frame accurate: the picture is the one at the pointer, not the nearest keyframe.
+        let time = CMTime(seconds: min(slot.fraction * slot.duration, max(0, slot.duration - 0.04)), preferredTimescale: 600)
+        slot.player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
             Task { @MainActor in
                 slot.isSeeking = false
                 if let next = slot.pending {
@@ -123,7 +129,27 @@ final class HoverPreview {
             try? await Task.sleep(for: .milliseconds(650))
             guard !Task.isCancelled, activeID == slot.id, !slot.isSeeking else { return }
             slot.player.play()
+            follow(slot)
         }
+    }
+
+    /// While a clip plays, the playhead is read from the player, so the line moves with the picture.
+    private func follow(_ slot: Slot) {
+        stopFollowing()
+        let player = slot.player
+        let token = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 1.0 / 20.0, preferredTimescale: 600), queue: .main) { [weak self] time in
+            MainActor.assumeIsolated {
+                guard let self, self.activeID == slot.id, slot.duration > 0, time.isNumeric else { return }
+                self.playhead = min(1, max(0, time.seconds / slot.duration))
+                self.seconds = time.seconds
+            }
+        }
+        timeObserver = (player, token)
+    }
+
+    private func stopFollowing() {
+        if let timeObserver { timeObserver.player.removeTimeObserver(timeObserver.token) }
+        timeObserver = nil
     }
 }
 

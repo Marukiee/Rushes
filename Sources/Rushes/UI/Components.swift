@@ -38,7 +38,37 @@ struct SectionTitle: View {
 }
 
 /// A button with a symbol, in the system's own styles: filled for the main action of a card, plain bordered for the others.
+private struct FloatingPanelKey: EnvironmentKey { static let defaultValue = false }
+
+extension EnvironmentValues {
+    /// True inside the little card in the corner of the screen. A panel that is not the key window draws the system's
+    /// filled buttons in grey, as if they were off, so there the buttons draw themselves.
+    var inFloatingPanel: Bool {
+        get { self[FloatingPanelKey.self] }
+        set { self[FloatingPanelKey.self] = newValue }
+    }
+}
+
+/// A capsule button that looks the same whether or not its window is the key one.
+struct CapsuleButtonStyle: ButtonStyle {
+    var prominent = false
+    var tint: Color = Palette.indigo
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.callout.weight(.semibold))
+            .foregroundStyle(prominent ? Color.white : Color.primary)
+            .padding(.horizontal, Space.l)
+            .frame(height: 38)
+            .background(prominent ? AnyShapeStyle(tint) : AnyShapeStyle(Color.primary.opacity(0.10)), in: Capsule())
+            .opacity(configuration.isPressed ? 0.8 : 1)
+            .scaleEffect(configuration.isPressed ? pressedScale : 1)
+            .animation(.rushesBouncy, value: configuration.isPressed)
+    }
+}
+
 struct ActionButton: View {
+    @Environment(\.inFloatingPanel) private var floating
     let title: LocalizedStringKey
     let symbol: String
     var prominent = false
@@ -56,7 +86,9 @@ struct ActionButton: View {
                 .fixedSize(horizontal: !wide, vertical: false)
                 .frame(maxWidth: wide ? .infinity : nil)
         }
-        if prominent {
+        if floating {
+            button.buttonStyle(CapsuleButtonStyle(prominent: prominent, tint: tint))
+        } else if prominent {
             button.buttonStyle(.borderedProminent).tint(tint).buttonBorderShape(.capsule).controlSize(.large)
         } else {
             button.buttonStyle(.bordered).buttonBorderShape(.capsule).controlSize(.large)
