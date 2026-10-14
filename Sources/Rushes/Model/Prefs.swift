@@ -39,6 +39,7 @@ enum PrefKey {
     static let backupName = "backupName"
     static let backupSubfolder = "backupSubfolder"
     static let undecidedMeansKeep = "undecidedMeansKeep"
+    static let copyKinds = "copyKinds"
     static let showInspector = "showInspector"
     static let showKnown = "showKnown"
     static let autoplay = "autoplay"
@@ -77,6 +78,11 @@ enum Prefs {
             defaults.set(true, forKey: PrefKey.showInspector)
             defaults.set(true, forKey: "detailsOnByDefaultApplied")
         }
+        // Only what was chosen is copied from this version on, also for someone who had the old setting.
+        if !defaults.bool(forKey: "chosenOnlyApplied") {
+            defaults.set(false, forKey: PrefKey.undecidedMeansKeep)
+            defaults.set(true, forKey: "chosenOnlyApplied")
+        }
         defaults.register(defaults: [
             PrefKey.cardBehavior: CardBehavior.review.rawValue,
             PrefKey.showRecognitionCard: true,
@@ -85,7 +91,8 @@ enum Prefs {
             PrefKey.ejectAfterImport: false,
             PrefKey.showInDock: true,
             PrefKey.askForName: true,
-            PrefKey.undecidedMeansKeep: true,
+            PrefKey.undecidedMeansKeep: false,
+            PrefKey.copyKinds: CopyKinds.all.rawValue,
             PrefKey.showInspector: true,
             PrefKey.showKnown: false,
             PrefKey.autoplay: true,
@@ -117,6 +124,7 @@ enum Prefs {
 
     static var cardBehavior: CardBehavior { CardBehavior(rawValue: string(PrefKey.cardBehavior)) ?? .review }
     static var lutMode: LUTMode { LUTMode(rawValue: string(PrefKey.lutMode)) ?? .auto }
+    static var copyKinds: CopyKinds { CopyKinds(rawValue: string(PrefKey.copyKinds)) ?? .all }
 
     static var extraFolders: [String] {
         get { defaults.stringArray(forKey: PrefKey.extraFolders) ?? [] }

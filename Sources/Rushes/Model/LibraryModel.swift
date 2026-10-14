@@ -110,18 +110,45 @@ final class LibraryModel {
     private func configure(_ review: ReviewModel, root: URL, name: String) {
         let key: (MediaItem) -> String = { item in Self.choiceKey(folder: name, rel: item.primary.rel) }
         let choices = ledger?.allChoices() ?? [:]
+        // What was chosen while the card was in carries over to its folder: a keep protects, a leave out is offered to clean up.
+        let cardChoices = ledger?.cardChoices() ?? [:]
+        let fingerprints = ledger?.cardFingerprintsByDestination() ?? [:]
+        var cardKeys: [String: String] = [:]
+        var leftOut = Set<String>()
         for item in review.allItems {
-            if let choice = choices[key(item)] {
-                if choice.verdict == "keep" { review.verdicts[item.id] = .keep }
-                if choice.rating > 0 { review.ratings[item.id] = choice.rating }
+            let fingerprint = fingerprints[root.appendingPathComponent(item.primary.rel).path]
+            if let fingerprint { cardKeys[item.id] = fingerprint }
+            let own = choices[key(item)]
+            let card = fingerprint.flatMap { cardChoices[$0] }
+            if own?.verdict == "keep" || (own == nil && card?.verdict == "keep") {
+                review.verdicts[item.id] = .keep
+            } else if card?.verdict == "skip" {
+                leftOut.insert(item.id)
             }
+            let stars = (own?.rating ?? 0) > 0 ? (own?.rating ?? 0) : (card?.rating ?? 0)
+            if stars > 0 { review.ratings[item.id] = stars }
         }
-        review.persistChoice = { [weak self] item, verdict, rating in
-            self?.ledger?.setChoice(key: key(item), verdict: verdict == .keep ? "keep" : nil, rating: rating)
+        review.leftOutOnCard = leftOut
+        review.persistChoice = { [weak self, weak review] item, verdict, rating in
+            guard let self else { return }
+            self.ledger?.setChoice(key: key(item), verdict: verdict == .keep ? "keep" : nil, rating: rating)
+            // The memory of the card follows, so the two never disagree when the card comes back.
+            guard let fingerprint = cardKeys[item.id], let entry = Self.entry(fingerprint: fingerprint) else { return }
+            if verdict == .keep { review?.leftOutOnCard.remove(item.id) }
+            let stillLeftOut = review?.leftOutOnCard.contains(item.id) == true
+            self.ledger?.setCardChoice(entry, verdict: verdict == .keep ? "keep" : (stillLeftOut ? "skip" : nil), rating: rating)
         }
         review.trashHandler = { [weak self] items in self?.trash(items, in: root) ?? [] }
         review.restoreHandler = { [weak self] done in self?.restore(done, in: root) }
         review.refresh()
+    }
+
+    /// A fingerprint back into the file it stands for, enough for the ledger to find its choice.
+    private static func entry(fingerprint: String) -> FileEntry? {
+        let parts = fingerprint.split(separator: "|", omittingEmptySubsequences: false)
+        guard parts.count >= 3, let size = UInt64(parts[parts.count - 2]), let seconds = Double(parts[parts.count - 1]) else { return nil }
+        let rel = parts.dropLast(2).joined(separator: "|")
+        return FileEntry(rel: rel, size: size, modified: Date(timeIntervalSince1970: seconds), created: nil)
     }
 
     static func choiceKey(folder: String, rel: String) -> String {

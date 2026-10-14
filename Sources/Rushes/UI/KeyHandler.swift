@@ -93,6 +93,7 @@ struct KeyHandler: NSViewRepresentable {
             case "]": player.skip(seconds: 5); return true
             case "x": perform(.skip); return true
             case "u": model.set(.undecided, advance: false); return true
+            case "r": model.reset(); return true
             case "z": model.undo(); return true
             case "m": player.muted.toggle(); return true
             case "c": player.toggleLook(); return true

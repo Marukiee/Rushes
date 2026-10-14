@@ -2,11 +2,25 @@ import AppKit
 import Foundation
 import RushesKit
 
+/// What to copy: what was chosen, or everything in reach, maybe of one day or a selection, maybe only the videos or the photos.
+struct ImportRequest {
+    var everything = false
+    var only: Set<String>?
+    var kinds: CopyKinds = Prefs.copyKinds
+    var undecidedMeansKeep = Prefs.bool(PrefKey.undecidedMeansKeep)
+    /// What part of the card it is, for what the app says while it copies: a day, or the selection.
+    var scope: String?
+}
+
 extension AppModel {
     // MARK: Starting
 
     /// Copies what the person chose. With `everything`, every new item goes, whatever was judged.
     func startImport(_ session: CardSession, everything: Bool = false) {
+        startImport(session, request: ImportRequest(everything: everything))
+    }
+
+    func startImport(_ session: CardSession, request: ImportRequest) {
         guard job?.isRunning != true else {
             showToast(String(localized: "Another import is still running"))
             return
@@ -22,16 +36,21 @@ extension AppModel {
         for item in scan.items { dates[item.id] = review.date(of: item) }
         let destinationRoot = destinationRoot(on: destination)
         let (card, folderName) = folderFor(session, destinationRoot: destinationRoot)
-        let verdicts = everything ? [:] : review.verdicts
         let plan = ImportPlanner.plan(
-            scan: scan, verdicts: verdicts, imported: known.imported, skipped: known.skipped, dates: dates,
-            undecidedMeansKeep: everything || Prefs.bool(PrefKey.undecidedMeansKeep), destinationPrefix: folderName + "/"
+            scan: scan, verdicts: review.verdicts, imported: known.imported, skipped: known.skipped, dates: dates,
+            undecidedMeansKeep: request.undecidedMeansKeep, everything: request.everything, only: request.only, kinds: request.kinds,
+            destinationPrefix: folderName + "/"
         )
 
         if plan.keptItems.isEmpty {
-            ledger.markSkipped(plan.skippedItems.map(\.primary), cardUUID: session.volume.uuid)
             session.updateCounts()
-            showToast(String(localized: "Nothing to copy"))
+            if plan.alreadyThere > 0 {
+                showToast(String(localized: "What you chose is already on \(destination.name)"))
+            } else if request.everything {
+                showToast(String(localized: "All of it is already on \(destination.name)"))
+            } else {
+                showToast(String(localized: "Nothing chosen yet. Mark clips with Keep, or copy all of them from the menu."))
+            }
             return
         }
 
@@ -54,6 +73,7 @@ extension AppModel {
 
         let folder = destinationRoot.appendingPathComponent(folderName, isDirectory: true)
         let job = ImportJob(cardName: session.name, cardUUID: session.volume.uuid, folderName: folderName, folder: folder, plan: plan)
+        job.request = request
         job.backupFolder = backupRoot?.appendingPathComponent(folderName, isDirectory: true)
         job.phase = .copying
         self.job = job
@@ -151,9 +171,6 @@ extension AppModel {
         job.report = report
         endWork()
 
-        // What was left out stays left out the next time this card comes in.
-        ledger.markSkipped(job.plan.skippedItems.map(\.primary), cardUUID: job.cardUUID)
-
         let prefix = job.folderName + "/"
         let entries = report.copied.map { copied -> Manifest.Entry in
             let rel = copied.task.destinationRel.hasPrefix(prefix) ? String(copied.task.destinationRel.dropFirst(prefix.count)) : copied.task.destinationRel
@@ -184,6 +201,14 @@ extension AppModel {
             job.phase = .done
             session.stage = .imported
             job.needsName = Prefs.bool(PrefKey.askForName)
+        }
+        // What arrived is on the disk now. It stays in view with its choice, so the next day can follow without a jump.
+        if let review = session.review {
+            let known = ledger.knownFingerprints()
+            for item in review.allItems where ImportPlanner.status(of: item, imported: known.imported, skipped: []) == .imported {
+                review.statuses[item.id] = .imported
+            }
+            review.refresh()
         }
         session.updateCounts()
         reloadLibrary()
@@ -218,9 +243,10 @@ extension AppModel {
 
     /// Tries the files that failed, or were left because the copy was stopped.
     func retry(_ session: CardSession) {
+        let request = job?.request ?? ImportRequest()
         job = nil
         session.updateCounts()
-        startImport(session, everything: false)
+        startImport(session, request: request)
     }
 
     // MARK: Naming the folder

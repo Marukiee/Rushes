@@ -13,10 +13,29 @@ public enum ItemStatus: String, Sendable {
     case skippedBefore
 }
 
+/// Which kinds of footage a copy takes along.
+public enum CopyKinds: String, CaseIterable, Sendable {
+    case all, video, photo
+
+    public func includes(_ kind: MediaKind) -> Bool {
+        switch self {
+        case .all: true
+        // Sound from a recorder belongs with the clips, not with the pictures.
+        case .video: kind != .photo
+        case .photo: kind == .photo
+        }
+    }
+}
+
 public struct ImportPlan: Sendable {
     public var tasks: [CopyTask] = []
     public var keptItems: [MediaItem] = []
+    /// Left out on purpose, now or the last time the card was in.
     public var skippedItems: [MediaItem] = []
+    /// Not judged and not taken along: they stay on the card and are offered again next time.
+    public var notChosenItems: [MediaItem] = []
+    /// Chosen, but already on the disk from an earlier copy.
+    public var alreadyThere = 0
     public var extraFiles = 0
     public var totalBytes: UInt64 { tasks.reduce(0) { $0 + $1.entry.size } }
     public var skippedBytes: UInt64 { skippedItems.reduce(0) { $0 + $1.totalBytes } }
@@ -42,13 +61,19 @@ public enum ImportPlanner {
 
     /// What to copy for the choices made. Items the person left out, and files copied before, stay home.
     /// The structure of the card (its extras) always comes along, so the folder on the disk looks like the card.
+    ///
+    /// `only` limits the copy to some items (one day, or a selection), `kinds` to videos or photos. With `everything`
+    /// the choices do not count: every item in reach that is not on the disk yet goes.
     public static func plan(
         scan: ScanResult,
         verdicts: [String: Verdict],
         imported: Set<String>,
         skipped: Set<String>,
         dates: [String: Date] = [:],
-        undecidedMeansKeep: Bool = true,
+        undecidedMeansKeep: Bool = false,
+        everything: Bool = false,
+        only: Set<String>? = nil,
+        kinds: CopyKinds = .all,
         destinationPrefix: String = ""
     ) -> ImportPlan {
         var plan = ImportPlan()
@@ -59,16 +84,25 @@ public enum ImportPlanner {
         }
 
         for item in scan.items {
+            if let only, !only.contains(item.id) { continue }
+            guard kinds.includes(item.kind) else { continue }
             let verdict = verdicts[item.id] ?? .undecided
-            let leaveOut = verdict == .skip || (verdict == .undecided && !undecidedMeansKeep)
             let state = status(of: item, imported: imported, skipped: skipped)
-            // Left out last time and not looked at again: it stays home, whatever the setting for items without a choice says.
-            let stillLeftOut = state == .skippedBefore && verdict == .undecided
-            if leaveOut || stillLeftOut {
-                if state != .imported { plan.skippedItems.append(item) }
+            if !everything {
+                // Left out last time and not looked at again: it stays home, whatever the setting for items without a choice says.
+                if verdict == .skip || state == .skippedBefore && verdict == .undecided {
+                    if state != .imported { plan.skippedItems.append(item) }
+                    continue
+                }
+                if verdict == .undecided, !undecidedMeansKeep {
+                    if state != .imported { plan.notChosenItems.append(item) }
+                    continue
+                }
+            }
+            if state == .imported {
+                if everything || verdict == .keep { plan.alreadyThere += 1 }
                 continue
             }
-            if state == .imported { continue }
             // A left out item that was marked keep this time is copied like any other.
             plan.keptItems.append(item)
             for file in item.files where !imported.contains(fingerprint(file)) { plan.tasks.append(task(for: file)) }
@@ -76,9 +110,12 @@ public enum ImportPlanner {
             earliest = min(earliest ?? date, date)
             latest = max(latest ?? date, date)
         }
-        for extra in scan.extras where !imported.contains(fingerprint(extra)) {
-            plan.tasks.append(task(for: extra))
-            plan.extraFiles += 1
+        // Only with something to copy: a copy of nothing is not a copy, whatever is left of the card's own files.
+        if !plan.keptItems.isEmpty {
+            for extra in scan.extras where !imported.contains(fingerprint(extra)) {
+                plan.tasks.append(task(for: extra))
+                plan.extraFiles += 1
+            }
         }
         if let earliest, let latest { plan.shotRange = earliest ... latest }
         return plan

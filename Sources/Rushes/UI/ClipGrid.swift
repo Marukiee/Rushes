@@ -107,22 +107,116 @@ struct ClipGrid: View {
     }
 }
 
+/// The head of a day: a click selects the whole day, and the menu holds what can be done with all of it at once.
 private struct DayHeader: View {
+    @Environment(AppModel.self) private var app
     let section: ReviewSection
     var model: ReviewModel
 
     var body: some View {
+        let kept = section.items.filter { model.verdict(of: $0) == .keep }.count
+        let left = section.items.filter { model.verdict(of: $0) == .skip }.count
+        let selected = !section.items.isEmpty && section.items.allSatisfy { model.selection.contains($0.id) }
         HStack(spacing: 8) {
             Text(Format.shortDay(section.day)).font(.callout.weight(.semibold)).lineLimit(1)
             Text("\(section.items.count)").font(.callout.monospacedDigit()).foregroundStyle(.secondary)
-            Text(Format.bytes(section.items.reduce(0) { $0 + $1.totalBytes })).font(.caption).foregroundStyle(.tertiary)
-            Spacer()
+            Text(Format.bytes(section.items.reduce(0) { $0 + $1.totalBytes })).font(.caption).foregroundStyle(.tertiary).lineLimit(1)
+            Spacer(minLength: 4)
+            if kept > 0 { tally(kept, symbol: VerdictStyle.symbol(.keep, mode: model.mode), tint: VerdictStyle.keep) }
+            if left > 0, model.mode == .card { tally(left, symbol: "xmark", tint: VerdictStyle.skip) }
+            DayMenu(section: section, model: model)
         }
-        .padding(.horizontal, Space.m)
-        .padding(.vertical, Space.s)
+        .padding(.leading, Space.m)
+        .padding(.trailing, Space.xs)
+        .padding(.vertical, Space.xs)
+        .frame(minHeight: 36)
         .background(.regularMaterial, in: Capsule())
+        .overlay { Capsule().strokeBorder(Palette.accent.opacity(selected ? 0.7 : 0), lineWidth: 2) }
+        .contentShape(Capsule())
+        .onTapGesture { model.selectDay(section) }
+        .help("Click to select the whole day")
+        .animation(.rushesFade, value: selected)
         .padding(.top, Space.xs)
         .padding(.bottom, Space.xs)
+    }
+
+    private func tally(_ count: Int, symbol: String, tint: Color) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: symbol).font(.system(size: 9, weight: .heavy))
+            Text("\(count)").font(.caption.weight(.semibold).monospacedDigit())
+        }
+        .foregroundStyle(tint)
+    }
+}
+
+/// The three dots of a day: choose, copy or start over for every clip and photo of that day.
+private struct DayMenu: View {
+    @Environment(AppModel.self) private var app
+    let section: ReviewSection
+    var model: ReviewModel
+
+    var body: some View {
+        Menu {
+            Button("Select the whole day", systemImage: "checklist") { model.selectDay(section) }
+            Divider()
+            if model.mode == .card {
+                Button("Keep all of this day", systemImage: "checkmark.circle") { model.setDay(section, to: .keep) }
+                Button("Leave out all of this day", systemImage: "xmark.circle") { model.setDay(section, to: .skip) }
+                if let session, app.destination != nil {
+                    Divider()
+                    copyButtons(session)
+                }
+            } else {
+                Button("Protect all of this day", systemImage: "lock") { model.setDay(section, to: .keep) }
+            }
+            Divider()
+            Button("Reset the choices of this day...", systemImage: "arrow.counterclockwise") {
+                model.pendingReset = .init(title: String(localized: "Reset the choices and stars of \(Format.shortDay(section.day))?"), items: section.items)
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 28, height: 28)
+                .contentShape(Circle())
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("This day")
+    }
+
+    private var session: CardSession? { app.sessions.first { $0.review === model } }
+
+    @ViewBuilder
+    private func copyButtons(_ session: CardSession) -> some View {
+        let ids = Set(model.items(ofDay: section.day).map(\.id))
+        let day = Format.shortDay(section.day)
+        let kept = model.toCopy(kinds: .all, undecidedMeansKeep: false, only: ids)
+        let videos = model.toCopy(kinds: .video, undecidedMeansKeep: false, everything: true, only: ids)
+        let photos = model.toCopy(kinds: .photo, undecidedMeansKeep: false, everything: true, only: ids)
+        let all = model.toCopy(kinds: .all, undecidedMeansKeep: false, everything: true, only: ids)
+        let running = app.job?.isRunning == true
+        Group {
+            Button("Copy what I kept of this day (\(kept.count), \(Format.bytes(kept.bytes)))", systemImage: "checkmark.circle.fill") {
+                app.startImport(session, request: ImportRequest(only: ids, kinds: .all, undecidedMeansKeep: false, scope: day))
+            }
+            .disabled(kept.count == 0)
+            Button("Copy all videos of this day (\(videos.count), \(Format.bytes(videos.bytes)))", systemImage: "film") {
+                app.startImport(session, request: ImportRequest(everything: true, only: ids, kinds: .video, scope: day))
+            }
+            .disabled(videos.count == 0)
+            if photos.count > 0 {
+                Button("Copy all photos of this day (\(photos.count), \(Format.bytes(photos.bytes)))", systemImage: "photo") {
+                    app.startImport(session, request: ImportRequest(everything: true, only: ids, kinds: .photo, scope: day))
+                }
+            }
+            Button("Copy all of this day (\(all.count), \(Format.bytes(all.bytes)))", systemImage: "square.and.arrow.down") {
+                app.startImport(session, request: ImportRequest(everything: true, only: ids, kinds: .all, scope: day))
+            }
+            .disabled(all.count == 0)
+        }
+        .disabled(running)
     }
 }
 
@@ -204,6 +298,7 @@ struct ClipCell: View {
                 preview.end(item.id)
             }
         }
+        .contextMenu { CellMenu(model: model, item: item) }
         .task(id: item.id + Prefs.lutMode.rawValue) {
             image = await Thumbnailer.shared.image(for: item, root: model.root, maxPixel: 480, look: Prefs.lutMode.look)
         }
@@ -244,9 +339,27 @@ struct ClipCell: View {
                         .background(VerdictStyle.color(verdict).gradient, in: .circle)
                         .transition(.scale.combined(with: .opacity))
                 }
+                if model.mode == .library, verdict == .undecided, model.leftOutOnCard.contains(item.id) {
+                    // Left out while the card was in, and here anyway: the same sign as on the card, so it reads the same.
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .heavy))
+                        .foregroundStyle(.white)
+                        .frame(width: 24, height: 24)
+                        .background(VerdictStyle.skip.gradient, in: .circle)
+                        .help("Left out on the card")
+                }
                 Spacer(minLength: 0)
-                if let suggestion = model.suggestions[item.id], verdict == .undecided {
+                if let suggestion = model.suggestions[item.id], verdict == .undecided, !model.isOnDisk(item) {
                     badge(suggestion.text, symbol: suggestion.symbol, color: VerdictStyle.hint)
+                } else if model.isOnDisk(item) {
+                    // Only the sign: once a whole card is copied every clip has it, and words on all of them would be noise.
+                    Image(systemName: "externaldrive.fill.badge.checkmark")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(.black.opacity(0.55), in: .capsule)
+                        .help("On disk")
                 } else if showUsage, let usage = model.usage[item.id], item.kind == .video || usage.status != .unused {
                     let info = usage.shortBadge
                     badge(info.text, symbol: info.symbol, color: info.color)
@@ -296,5 +409,35 @@ struct ClipCell: View {
         .padding(.horizontal, 6)
         .padding(.vertical, 2)
         .background(color.opacity(0.92), in: .capsule)
+    }
+}
+
+/// A right click on a clip: the same choices as the keys, for the clip or for the selection it is part of.
+private struct CellMenu: View {
+    @Environment(AppModel.self) private var app
+    var model: ReviewModel
+    let item: MediaItem
+
+    var body: some View {
+        let library = model.mode == .library
+        Button(library ? "Protect" : "Keep", systemImage: library ? "lock" : "checkmark") { target(); model.set(.keep, advance: false) }
+        if !library {
+            Button("Leave out", systemImage: "xmark") { target(); model.set(.skip, advance: false) }
+        }
+        Button("Reset choice and stars (R)", systemImage: "arrow.counterclockwise") { target(); model.reset() }
+        Divider()
+        if !library, let session = app.sessions.first(where: { $0.review === model }), app.destination != nil {
+            let ids = Set((model.selection.contains(item.id) ? model.targets : [item]).map(\.id))
+            Button(ids.count == 1 ? "Copy this one" : "Copy these \(ids.count)", systemImage: "square.and.arrow.down") {
+                app.startImport(session, request: ImportRequest(everything: true, only: ids, kinds: .all, scope: String(localized: "the selection")))
+            }
+            .disabled(app.job?.isRunning == true || model.toCopy(kinds: .all, undecidedMeansKeep: true, everything: true, only: ids).count == 0)
+        }
+        Button("Show in Finder", systemImage: "folder") { NSWorkspace.shared.activateFileViewerSelecting([model.url(of: item)]) }
+    }
+
+    /// A right click on a clip outside the selection makes it the one in hand, as everywhere on the Mac.
+    private func target() {
+        if !model.selection.contains(item.id) { model.focus(item.id) }
     }
 }

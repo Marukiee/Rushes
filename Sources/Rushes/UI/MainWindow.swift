@@ -14,6 +14,13 @@ struct MainWindow: View {
         } detail: {
             detail
                 .animation(.rushes, value: app.page)
+                // The copy shows on every page while the window is open. The overview has it as a card of its own.
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    if let job = app.job, app.page != .overview {
+                        JobBar(job: job).transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                }
+                .animation(.rushes, value: app.job?.id)
         }
         .overlay(alignment: .bottom) {
             if let toast = app.toast {
@@ -169,6 +176,7 @@ struct Sidebar: View {
 
 /// A card in the Mac, at the foot of the sidebar above the disk: how full it is, and how much of that is video and how much photos.
 private struct CardFooter: View {
+    @Environment(AppModel.self) private var app
     var session: CardSession
 
     var body: some View {
@@ -191,6 +199,14 @@ private struct CardFooter: View {
                 .init(id: "photo", bytes: photo, color: Palette.rose),
                 .init(id: "other", bytes: session.phase == .ready ? other : 0, color: Color.primary.opacity(0.32)),
             ])
+            if let job = app.job, job.isRunning, job.cardUUID == volume.uuid {
+                // While it copies, the card says how far it is, on every page.
+                VStack(alignment: .leading, spacing: 4) {
+                    ProgressCapsule(fraction: job.progress?.verifiedFraction ?? 0, ahead: job.progress?.copiedFraction ?? 0).frame(height: 6)
+                    Text("Copying to \(job.folderName), \(Int(((job.progress?.fraction ?? 0) * 100).rounded()))%")
+                        .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                }
+            }
             if session.phase == .ready {
                 VStack(spacing: 3) {
                     legend("Video", bytes: video, color: Palette.indigo)

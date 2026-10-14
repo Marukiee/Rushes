@@ -40,6 +40,16 @@ struct ReviewBody<Banner: View>: View {
         .padding(.horizontal, Space.page)
         .padding(.top, Space.s)
         .padding(.bottom, Space.l)
+        .confirmationDialog(
+            model.pendingReset?.title ?? "",
+            isPresented: Binding(get: { model.pendingReset != nil }, set: { if !$0 { model.pendingReset = nil } }),
+            titleVisibility: .visible, presenting: model.pendingReset
+        ) { request in
+            Button("Reset \(request.items.count)", role: .destructive) { model.reset(request.items) }
+            Button("Cancel", role: .cancel) {}
+        } message: { _ in
+            Text("Keep, Leave out and the stars go back to nothing. Undo (Z) brings them back.")
+        }
     }
 }
 
@@ -96,7 +106,7 @@ private struct StateFilterMenu: View {
             }
             if model.mode == .card {
                 Divider()
-                Toggle("Show what was copied before", isOn: Binding(get: { model.showKnown }, set: { model.showKnown = $0; model.refresh() }))
+                Toggle("Show what was copied or left out before", isOn: Binding(get: { model.showKnown }, set: { model.showKnown = $0; model.refresh() }))
             }
         } label: {
             let active = model.stateFilter != .all || model.ratingFilter != .any
@@ -112,7 +122,8 @@ private struct StateFilterMenu: View {
     }
 
     private var states: [ReviewStateFilter] {
-        model.mode == .card ? [.all, .undecided, .keep, .skip, .suggested] : [.all, .unused, .used, .protected, .duplicates, .undecided]
+        model.mode == .card ? [.all, .undecided, .keep, .skip, .suggested, .notOnDisk, .onDisk]
+            : [.all, .unused, .used, .protected, .leftOut, .duplicates, .undecided]
     }
 
     private func label(_ state: ReviewStateFilter) -> String {
@@ -126,6 +137,9 @@ private struct StateFilterMenu: View {
         case .used: String(localized: "Used in DaVinci")
         case .protected: String(localized: "Protected")
         case .duplicates: String(localized: "Copies of each other")
+        case .notOnDisk: String(localized: "Not on the disk yet")
+        case .onDisk: String(localized: "Already on the disk")
+        case .leftOut: String(localized: "Left out on the card")
         }
     }
 }
@@ -140,7 +154,12 @@ struct CardMoreMenu: View {
                 .disabled(model.counts().suggested == 0)
             Button("Keep everything not judged", systemImage: "checkmark.circle") { model.keepAllUndecided() }
             Divider()
-            Button("Clear all choices", systemImage: "arrow.counterclockwise") { model.clearAll() }
+            Button("Reset the selected (R)", systemImage: "arrow.uturn.backward.circle") { model.reset() }
+                .disabled(model.targets.isEmpty)
+            Button("Reset all choices...", systemImage: "arrow.counterclockwise") {
+                let items = model.allItems.filter { model.isActionable($0) && (model.verdicts[$0.id] != nil || model.ratings[$0.id] != nil) }
+                model.pendingReset = .init(title: String(localized: "Reset every choice and star on this card?"), items: items)
+            }
         } label: {
             Label("More", systemImage: "ellipsis")
         }
@@ -180,11 +199,13 @@ struct KeyHints: View {
                     hint("[  ]", "Five seconds back or forward")
                     hint("Tab", "Next one not judged")
                     hint("Z", "Undo")
-                    hint("U", "Clear the choice")
+                    hint("R", "Reset the choice and the stars")
+                    hint("U", "Clear the choice, keep the stars")
                     hint("M", "Sound on or off")
                     hint("C", "LUT on or off")
                     hint("I", "Details on or off")
                     hint("⇧ click, ⌘ click", "Select several")
+                    hint("Click a day", "Select the whole day")
                 }
                 .padding(Space.l)
             }

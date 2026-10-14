@@ -267,11 +267,19 @@ struct KeyCap: View {
 struct ProgressCapsule: View {
     let fraction: Double
     var tint: Color = Palette.indigo
+    /// A lighter part ahead of the bar: what is copied and not yet checked, the way a player shows what has loaded.
+    var ahead: Double?
 
     var body: some View {
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
                 Capsule().fill(Color.primary.opacity(0.08))
+                if let ahead {
+                    Capsule()
+                        .fill(tint.opacity(0.32))
+                        .frame(width: max(6, proxy.size.width * min(1, max(0, ahead))))
+                        .animation(.rushes, value: ahead)
+                }
                 Capsule()
                     .fill(tint.gradient)
                     .frame(width: max(6, proxy.size.width * min(1, max(0, fraction))))

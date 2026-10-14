@@ -76,6 +76,24 @@ extension AppModel {
 
     // MARK: Cleaning up
 
+    /// What was left out while the card was in and still takes room here. A clip that a project uses stays: that is no time to ask.
+    func leftOutItems(in folder: LibraryModel.Folder) -> [MediaItem] {
+        let review = folder.review
+        return review.allItems.filter { item in
+            review.leftOutOnCard.contains(item.id) && review.verdicts[item.id] != .keep && !isInUse(item, review: review)
+        }
+    }
+
+    func leftOutInUse(in folder: LibraryModel.Folder) -> Int {
+        let review = folder.review
+        return review.allItems.filter { review.leftOutOnCard.contains($0.id) && isInUse($0, review: review) }.count
+    }
+
+    private func isInUse(_ item: MediaItem, review: ReviewModel) -> Bool {
+        guard let status = review.usage[item.id]?.status else { return false }
+        return status == .used || status == .poolOnly
+    }
+
     /// Clips that no project uses, in a folder or in all of them. Photos only when asked for.
     func unusedItems(in folder: LibraryModel.Folder) -> [MediaItem] {
         let photos = Prefs.bool(PrefKey.photosInSavings)

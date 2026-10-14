@@ -34,6 +34,8 @@ scripts                bouwen, tekenen, releasen, teksten
   nog klopt. Zelfde bestandsnaam zonder pad dat past is "misschien gebruikt" en nooit een zekerheid.
 - **Resolve wordt offline gelezen.** `Project.db` wordt gekopieerd en de kopie wordt gelezen. Resolve hoeft niet open en wordt niet
   gestoord. Schrijven (bins, importeren, relinken) gaat via `Resources/resolve_bridge.py` en de scripting-API van Resolve Studio.
+- **Alleen wat gekozen is wordt gekopieerd** (standaard). Niet beoordeeld blijft op de kaart en wordt niet als overgeslagen onthouden.
+  Elke keuze en ster op een kaart staat in de ledger als `card|<fingerprint>` en gaat mee naar de map op de schijf (`leftOutOnCard`).
 - **Niets wordt echt verwijderd.** Alles gaat naar de prullenbak, met Ongedaan. Een clip die een project gebruikt vraagt eerst.
 - **Een proxy van de camera heeft de look al.** De LUT gaat alleen over het origineel (S-Log3). Zie `PlayerController`.
 - **Foto's tellen niet mee in ruimtewinst** tenzij de gebruiker dat aanzet, want Resolve is zelden waar foto's worden gebruikt.

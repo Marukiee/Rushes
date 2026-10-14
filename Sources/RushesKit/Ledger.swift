@@ -100,6 +100,14 @@ public final class Ledger: @unchecked Sendable {
         )
         """)
         try db.execute("CREATE TABLE IF NOT EXISTS notes (key TEXT PRIMARY KEY, text TEXT)")
+        // Version 1: what was left out on a card is a choice like any other, so the folder of the card on the disk knows it too.
+        if ((try? db.scalarInt("PRAGMA user_version")) ?? nil ?? 0) < 1 {
+            try db.execute("""
+            INSERT OR IGNORE INTO choices (key, verdict, rating, at)
+            SELECT 'card|' || rel || '|' || size || '|' || mtime, 'skip', 0, at FROM skipped
+            """)
+            try db.execute("PRAGMA user_version = 1")
+        }
     }
 
     // MARK: Cards
@@ -332,6 +340,39 @@ public final class Ledger: @unchecked Sendable {
                 try? db.execute("INSERT OR REPLACE INTO choices (key, verdict, rating, at) VALUES (?, ?, ?, ?)",
                                 [.text(key), .text(verdict ?? ""), .int(Int64(rating)), .int(Int64(Date().timeIntervalSince1970))])
             }
+        }
+    }
+
+    // MARK: Choices made on a card
+
+    /// A choice on a card belongs to the file itself (name, size and time), so it is found again when the card comes back,
+    /// and in the folder on the disk once the file is copied.
+    public static func cardChoiceKey(_ entry: FileEntry) -> String { "card|" + entry.fingerprint }
+
+    public func setCardChoice(_ entry: FileEntry, verdict: String?, rating: Int) {
+        setChoice(key: Self.cardChoiceKey(entry), verdict: verdict, rating: rating)
+    }
+
+    /// Every choice made on a card, by the fingerprint of the file.
+    public func cardChoices() -> [String: (verdict: String, rating: Int)] {
+        locked {
+            var result: [String: (String, Int)] = [:]
+            _ = try? db.query("SELECT key, verdict, rating FROM choices WHERE key LIKE 'card|%'") { row in
+                result[String((row[0].text ?? "").dropFirst(5))] = (row[1].text ?? "", Int(row[2].int ?? 0))
+            }
+            return result
+        }
+    }
+
+    /// The fingerprint on the card of every file that was copied, by where it was put. That is how a folder on the disk
+    /// knows what was chosen for its files while the card was in.
+    public func cardFingerprintsByDestination() -> [String: String] {
+        locked {
+            var result: [String: String] = [:]
+            _ = try? db.query("SELECT dest, rel, size, mtime FROM files") { row in
+                if let dest = row[0].text { result[dest] = "\(row[1].text ?? "")|\(row[2].int ?? 0)|\(row[3].int ?? 0)" }
+            }
+            return result
         }
     }
 

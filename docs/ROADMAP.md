@@ -18,6 +18,13 @@ Wat er nog kan komen. Nieuwe wensen komen hier eerst.
 - Controle van de manifests op een schema (een keer per maand), met een melding bij een afwijking.
 - Siri en Opdrachten: "importeer de kaart".
 
+## Gedaan in 0.2.0
+
+Standaard alleen kopiëren wat behouden is, keuze voor video's, foto's of allebei, menu per dag (selecteren, behouden,
+overslaan, kopiëren, terugzetten met bevestiging), R en een tweede klik om terug te zetten, keuzes en sterren in de ledger
+(ook als de kaart terugkomt), overgeslagen clips opruimen uit de map op de schijf, voortgang in het venster met gekopieerd en
+gecontroleerd apart, de fout bij een tweede dag.
+
 ## Gedaan in 0.1.0
 
 Systeemzijbalk en werkbalk in Liquid Glass, hover-skimmen van clips,

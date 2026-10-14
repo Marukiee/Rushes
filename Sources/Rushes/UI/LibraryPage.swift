@@ -7,6 +7,7 @@ struct LibraryPage: View {
     @Environment(AppModel.self) private var app
     @LocalState private var pendingDelete: [MediaItem]?
     @LocalState private var confirmCleanup = false
+    @LocalState private var confirmLeftOut = false
     @LocalState private var renaming = false
     @LocalState private var newName = ""
 
@@ -27,6 +28,7 @@ struct LibraryPage: View {
                 )
             } else if let folder = library.selected {
                 ReviewBody(model: folder.review, showUsage: true, onRequestDelete: { requestDelete(in: folder) }) {
+                    LeftOutBanner(folder: folder) { confirmLeftOut = true }
                     SavingsBanner(folder: folder) { confirmCleanup = true }
                 }
                 .id(folder.id)
@@ -66,6 +68,24 @@ struct LibraryPage: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Only clips that are in no DaVinci Resolve project, and that you did not protect. They go to the Trash, so you can still put them back.")
+        }
+        .confirmationDialog(
+            "Move what you left out on the card to the Trash?", isPresented: $confirmLeftOut, titleVisibility: .visible
+        ) {
+            if let folder = library.selected {
+                let items = app.leftOutItems(in: folder)
+                Button("Move \(items.count) (\(Format.bytes(items.reduce(0) { $0 + $1.totalBytes }))) to the Trash", role: .destructive) {
+                    folder.review.trashItems(items)
+                    folder.review.leftOutOnCard.subtract(items.map(\.id))
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            if let folder = library.selected, app.leftOutInUse(in: folder) > 0 {
+                Text("\(app.leftOutInUse(in: folder)) of them are used in DaVinci Resolve and stay. The rest goes to the Trash, so you can still put it back.")
+            } else {
+                Text("They go to the Trash, so you can still put them back. The card is not touched.")
+            }
         }
         .sheet(isPresented: $renaming) {
             RenameSheet(name: $newName, folder: library.selected) {
@@ -115,6 +135,30 @@ struct LibraryPage: View {
 }
 
 // MARK: Banner and menu
+
+/// What was left out while the card was in and is here anyway, because it was copied before it was judged.
+private struct LeftOutBanner: View {
+    @Environment(AppModel.self) private var app
+    let folder: LibraryModel.Folder
+    let cleanup: () -> Void
+
+    var body: some View {
+        let items = app.leftOutItems(in: folder)
+        if !items.isEmpty {
+            InfoBanner(
+                symbol: "xmark.circle.fill", tint: VerdictStyle.skip,
+                text: String(localized: "\(items.count) you left out on the card are still here (\(Format.bytes(items.reduce(0) { $0 + $1.totalBytes })))")
+            ) {
+                Button("Show") { folder.review.stateFilter = .leftOut; folder.review.refresh() }
+                    .buttonStyle(.bordered)
+                Button("Move to the Trash", action: cleanup)
+                    .buttonStyle(.borderedProminent)
+                    .tint(VerdictStyle.skip)
+            }
+            .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+}
 
 /// What can be freed in this folder, with the button that does it. Before DaVinci has been read it offers to read it.
 private struct SavingsBanner: View {

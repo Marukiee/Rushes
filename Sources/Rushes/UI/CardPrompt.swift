@@ -44,8 +44,13 @@ final class CardPromptController {
 
     func sync(model: AppModel) {
         guard Prefs.bool(PrefKey.showRecognitionCard), let state = Self.state(for: model) else { hide(); return }
-        // The window shows the same thing, so the card stays out of its way.
-        if WindowOpener.shared.mainWindowIsFront, model.page == .overview || model.page == .review { hide(); return }
+        // The window shows the same thing, so the card stays out of its way: a copy shows on every page of it.
+        if WindowOpener.shared.mainWindowIsFront {
+            switch state {
+            case .copying, .done, .failed: hide(); return
+            default: if model.page == .overview || model.page == .review { hide(); return }
+            }
+        }
         show(state, model: model)
     }
 

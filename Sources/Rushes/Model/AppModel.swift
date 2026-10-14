@@ -244,9 +244,25 @@ final class AppModel {
             }.value
             guard sessions.contains(where: { $0.id == session.id }) else { return }
             let review = ReviewModel(mode: .card, root: root, title: session.volume.name, items: scan.items)
-            for item in scan.items { review.statuses[item.id] = ImportPlanner.status(of: item, imported: known.imported, skipped: known.skipped) }
+            let choices = ledger.cardChoices()
+            for item in scan.items {
+                let status = ImportPlanner.status(of: item, imported: known.imported, skipped: known.skipped)
+                review.statuses[item.id] = status
+                if status != .new { review.knownAtStart.insert(item.id) }
+                // What was chosen the last time this card was in comes back, and so do the stars.
+                let fingerprint = item.primary.fingerprint
+                if let choice = choices[fingerprint] {
+                    if let verdict = Verdict(rawValue: choice.verdict), verdict != .undecided { review.verdicts[item.id] = verdict }
+                    if choice.rating > 0 { review.ratings[item.id] = choice.rating }
+                } else if known.skipped.contains(fingerprint) {
+                    review.verdicts[item.id] = .skip
+                }
+            }
             review.subtitle = Self.sizeText(session.volume.used)
             review.markSkipped = { [weak self] items, skip in self?.rememberSkipped(items, skip: skip, session: session) }
+            review.persistChoice = { [weak self] item, verdict, rating in
+                self?.ledger.setCardChoice(item.primary, verdict: verdict?.rawValue, rating: rating)
+            }
             review.refresh()
             session.scan = scan
             session.review = review
@@ -261,6 +277,11 @@ final class AppModel {
     private func rememberSkipped(_ items: [MediaItem], skip: Bool, session: CardSession) {
         let entries = items.map(\.primary)
         if skip { ledger.markSkipped(entries, cardUUID: session.volume.uuid) } else { ledger.unmarkSkipped(entries) }
+        // Taken back in: it is up for a copy again like anything new.
+        if !skip, let review = session.review {
+            for item in items where review.statuses[item.id] == .skippedBefore { review.statuses[item.id] = .new }
+        }
+        session.updateCounts()
     }
 
     /// The card has been read and the disk is, or is not, there. Decides what the person is shown.

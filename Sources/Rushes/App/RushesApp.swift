@@ -41,6 +41,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         source.setEventHandler { RunLoop.main.perform(inModes: [.common]) { NSApp.terminate(nil) } }
         source.resume()
         terminateSignal = source
+        watchWindows()
         Task { @MainActor in
             AppModel.shared.start()
             DebugSupport.install()
@@ -56,6 +57,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task { @MainActor in
             Updater.shared.checkIfDue()
             AppModel.shared.syncPrompt()
+        }
+    }
+
+    /// The card in the corner takes over from the window when the person goes elsewhere.
+    func applicationDidResignActive(_ notification: Notification) {
+        Task { @MainActor in AppModel.shared.syncPrompt() }
+    }
+
+    private func watchWindows() {
+        let center = NotificationCenter.default
+        for name in [NSWindow.willCloseNotification, NSWindow.didMiniaturizeNotification, NSWindow.didBecomeKeyNotification] {
+            center.addObserver(forName: name, object: nil, queue: .main) { _ in
+                // After the window has settled, so the check sees the new state.
+                DispatchQueue.main.async { MainActor.assumeIsolated { AppModel.shared.syncPrompt() } }
+            }
         }
     }
 

@@ -47,21 +47,20 @@ struct ImportCard: View {
                 PillSpinner(size: 26)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Copying \(job.cardName) to \(job.folderName)").font(.headline).lineLimit(1)
-                    Text(progress?.verifying == true ? LocalizedStringKey("Checking every file against the card") : LocalizedStringKey("Copying, and making a checksum on the way"))
-                        .font(.caption).foregroundStyle(.secondary)
+                    Text(phaseText(progress)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                 }
                 Spacer(minLength: 8)
                 Text("\(Int(((progress?.fraction ?? 0) * 100).rounded()))%")
                     .font(.title2.weight(.bold).monospacedDigit())
                     .contentTransition(.numericText())
             }
-            ProgressCapsule(fraction: progress?.fraction ?? 0).frame(height: 8)
+            ProgressCapsule(fraction: progress?.verifiedFraction ?? 0, ahead: progress?.copiedFraction ?? 0).frame(height: 8)
             HStack {
                 if let progress {
-                    Text("\(progress.filesDone) of \(progress.filesTotal) files")
+                    Text("\(progress.filesDone) of \(progress.filesTotal) checked")
                     Text(Format.bytes(job.plan.totalBytes) + " " + String(localized: "in total"))
-                    if progress.bytesPerSecond > 1_000_000 {
-                        Text("\(Format.bytes(UInt64(progress.bytesPerSecond)))/s")
+                    if progress.cardBytesPerSecond > 1_000_000 {
+                        Text("\(Format.bytes(UInt64(progress.cardBytesPerSecond)))/s")
                     }
                     if let left = progress.remaining { Text(Format.remaining(left)) }
                 }
@@ -76,6 +75,18 @@ struct ImportCard: View {
                 Text(name).font(.caption).foregroundStyle(.tertiary).lineLimit(1).truncationMode(.middle)
             }
         }
+    }
+
+    /// Copying and checking run side by side, so the line says both until the copying is through.
+    private func phaseText(_ progress: CopyProgress?) -> String {
+        var text: String
+        if let progress, progress.copiedFraction >= 1 {
+            text = String(localized: "Checking the last files against the card")
+        } else {
+            text = String(localized: "Copying, and checking every file against the card")
+        }
+        if let scope = job.scopeText { text = scope + "  ·  " + text }
+        return text
     }
 
     // MARK: Done
@@ -97,6 +108,10 @@ struct ImportCard: View {
             if job.plan.skippedItems.count > 0 {
                 Label("\(job.plan.skippedItems.count) left out, \(Format.bytes(job.plan.skippedBytes)) saved", systemImage: "leaf.fill")
                     .font(.callout).foregroundStyle(VerdictStyle.keep)
+            }
+            if job.plan.notChosenItems.count > 0 {
+                Label("\(job.plan.notChosenItems.count) not judged stay on the card", systemImage: "circle.dashed")
+                    .font(.callout).foregroundStyle(.secondary)
             }
             if job.needsName, !compact {
                 HStack(spacing: 8) {

@@ -77,11 +77,51 @@ enum PlannerTests {
         let (items, extras) = FolderScanner.group(files)
         let scan = ScanResult(root: URL(fileURLWithPath: "/card"), items: items, extras: extras)
         let imported: Set<String> = ["dcim/a0001.mp4|10|1000000"]
-        let plan = ImportPlanner.plan(scan: scan, verdicts: ["DCIM/A0002.MP4": .skip], imported: imported, skipped: [])
+        let plan = ImportPlanner.plan(scan: scan, verdicts: ["DCIM/A0002.MP4": .skip], imported: imported, skipped: [], undecidedMeansKeep: true)
         expect(plan.keptItems.map(\.name) == ["A0003.MP4"])
         expect(plan.skippedItems.map(\.name) == ["A0002.MP4"])
         expect(plan.tasks.map(\.entry.rel).sorted() == ["DCIM/A0003.MP4", "INDEX.BIN"])
         expect(plan.totalBytes == 31)
+    }
+
+    /// The default: only what was kept goes. What was not judged stays on the card and is not remembered as left out.
+    static func onlyWhatWasChosen() {
+        let files = [entry("DCIM/A0001.MP4", size: 10), entry("DCIM/A0002.MP4", size: 20), entry("DCIM/DSC0003.JPG", size: 5), entry("INDEX.BIN", size: 1)]
+        let (items, extras) = FolderScanner.group(files)
+        let scan = ScanResult(root: URL(fileURLWithPath: "/card"), items: items, extras: extras)
+        let plan = ImportPlanner.plan(scan: scan, verdicts: ["DCIM/A0001.MP4": .keep], imported: [], skipped: [])
+        expect(plan.keptItems.map(\.name) == ["A0001.MP4"])
+        expect(plan.skippedItems.isEmpty)
+        expect(Set(plan.notChosenItems.map(\.name)) == ["A0002.MP4", "DSC0003.JPG"])
+        expect(plan.tasks.map(\.entry.rel).sorted() == ["DCIM/A0001.MP4", "INDEX.BIN"])
+        // Nothing chosen: nothing goes, not even the card's own files.
+        let none = ImportPlanner.plan(scan: scan, verdicts: [:], imported: [], skipped: [])
+        expect(none.tasks.isEmpty)
+    }
+
+    /// A second day after the first: what was copied is not copied again, and what is chosen now goes.
+    static func secondDayAfterTheFirst() {
+        let files = [entry("DCIM/A0001.MP4", size: 10, seconds: 1_000_000), entry("DCIM/A0002.MP4", size: 20, seconds: 1_100_000)]
+        let (items, extras) = FolderScanner.group(files)
+        let scan = ScanResult(root: URL(fileURLWithPath: "/card"), items: items, extras: extras)
+        let first = ImportPlanner.plan(scan: scan, verdicts: ["DCIM/A0001.MP4": .keep], imported: [], skipped: [])
+        let imported = Set(first.tasks.map(\.entry.fingerprint))
+        let second = ImportPlanner.plan(scan: scan, verdicts: ["DCIM/A0001.MP4": .keep, "DCIM/A0002.MP4": .keep], imported: imported, skipped: [])
+        expect(second.keptItems.map(\.name) == ["A0002.MP4"])
+        expect(second.alreadyThere == 1)
+    }
+
+    static func videosOrPhotosAndOneDay() {
+        let files = [entry("DCIM/A0001.MP4", size: 10), entry("DCIM/A0002.MP4", size: 20), entry("DCIM/DSC0003.ARW", size: 30), entry("DCIM/DSC0003.JPG", size: 5)]
+        let (items, extras) = FolderScanner.group(files)
+        let scan = ScanResult(root: URL(fileURLWithPath: "/card"), items: items, extras: extras)
+        let videos = ImportPlanner.plan(scan: scan, verdicts: [:], imported: [], skipped: [], everything: true, kinds: .video)
+        expect(Set(videos.keptItems.map(\.name)) == ["A0001.MP4", "A0002.MP4"])
+        let photos = ImportPlanner.plan(scan: scan, verdicts: [:], imported: [], skipped: [], everything: true, kinds: .photo)
+        expect(photos.keptItems.map(\.name) == ["DSC0003.ARW"])
+        expect(photos.totalBytes == 35)
+        let one = ImportPlanner.plan(scan: scan, verdicts: ["DCIM/A0002.MP4": .skip], imported: [], skipped: [], everything: true, only: ["DCIM/A0002.MP4"])
+        expect(one.keptItems.map(\.name) == ["A0002.MP4"])
     }
 
     static func reformattedCardIsNotMistakenForOld() {
@@ -89,7 +129,7 @@ enum PlannerTests {
         let fresh = entry("DCIM/A0001.MP4", size: 10, seconds: 2_000_000)
         let (items, extras) = FolderScanner.group([fresh])
         let scan = ScanResult(root: URL(fileURLWithPath: "/card"), items: items, extras: extras)
-        let plan = ImportPlanner.plan(scan: scan, verdicts: [:], imported: [old.fingerprint], skipped: [])
+        let plan = ImportPlanner.plan(scan: scan, verdicts: [:], imported: [old.fingerprint], skipped: [], undecidedMeansKeep: true)
         expect(plan.keptItems.count == 1)
     }
 }
@@ -206,6 +246,12 @@ enum LedgerTests {
         expect(ledger.files(ofImport: id).first?.dest == "/x/SD 1 Zweden/DCIM/A.MP4")
         ledger.setChoice(key: "sd1|a", verdict: "keep", rating: 3)
         expect(ledger.choice(forKey: "sd1|a")?.rating == 3)
+        ledger.setCardChoice(file, verdict: "skip", rating: 2)
+        expect(ledger.cardChoices()[file.fingerprint]?.verdict == "skip")
+        expect(ledger.cardChoices()[file.fingerprint]?.rating == 2)
+        expect(ledger.cardFingerprintsByDestination()["/x/SD 1 Zweden/DCIM/A.MP4"] == file.fingerprint)
+        ledger.setCardChoice(file, verdict: nil, rating: 0)
+        expect(ledger.cardChoices()[file.fingerprint] == nil)
     }
 }
 

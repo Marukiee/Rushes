@@ -13,7 +13,10 @@ Made for a Sony camera and a big external SSD, but nothing is tied to either.
 
 **Looks through a card quickly.** Thumbnails you skim with the pointer, frame by frame and at the exact spot of the pointer like in DaVinci (hold still and the clip plays on), a big player with J K L and frame
 stepping, the camera's own LUT on log footage, stars, and Keep or Leave out per clip. Black or covered clips, very short
-clips, out of focus photos and near copies in a burst are suggested for leaving out. Only what you keep is copied.
+clips, out of focus photos and near copies in a burst are suggested for leaving out. Only what you keep is copied, all of
+it or only the videos or the photos, the whole card or one day at a time. What you did not judge stays on the card for
+next time. Every choice and every star is remembered, also when the card comes back, and its folder on the disk knows
+what you left out, so that can go later.
 
 **Copies safely.** The card is only read. A checksum is made while a file is read, the file is written under a
 temporary name and renamed when whole, and then it is read back from the disk and compared. A second copy to another disk
@@ -58,9 +61,11 @@ The first time a card is read, macOS asks for access to removable volumes. Allow
 | , and . | One frame back or forward |
 | [ and ] | Five seconds back or forward |
 | Tab | The next one not judged |
+| R | Reset the choice and the stars |
 | Z | Undo |
 | M, I | Sound on or off, details on or off |
 | Shift click, Command click | Select several |
+| Click on a day | Select the whole day (its menu copies, keeps or resets the day) |
 
 ## How it reads Resolve
 

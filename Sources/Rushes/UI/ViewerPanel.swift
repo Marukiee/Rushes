@@ -26,12 +26,17 @@ struct ViewerPanel: View {
             let showUpNext = geometry.size.height - height - barReserve - detailsReserve > upNextReserve - 12
             VStack(spacing: Space.l) {
                 stage
+                    .frame(width: width, height: height)
+                    // Over the frame, not in it: a bar wider than a narrow picture would otherwise push what floats off the edge.
+                    .overlay(alignment: .topTrailing) { if let item = model.focusItem { topBar(item) } }
+                    .overlay(alignment: .bottom) {
+                        if model.focusItem?.kind == .video { TransportBar(player: player, lutName: player.lutName).padding(12) }
+                    }
                     // The picture is dark whatever the Mac is set to, so what floats over it is dark glass with white text.
                     .environment(\.colorScheme, .dark)
-                    .frame(width: width, height: height)
                     .clipShape(RoundedRectangle(cornerRadius: Metrics.card, style: .continuous))
                     .frame(maxWidth: .infinity)
-                VerdictBar(model: model, onKeep: { perform(.keep) }, onSkip: { perform(.skip) })
+                VerdictBar(model: model, onKeep: { perform(.keep, fromButton: true) }, onSkip: { perform(.skip, fromButton: true) })
                 if showDetails, let item = model.focusItem {
                     DetailsCard(model: model, item: item)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -51,8 +56,13 @@ struct ViewerPanel: View {
         .background(KeyHandler(model: model, player: player, perform: { perform($0) }))
     }
 
-    /// A verdict from a button or a key: the sign pops up over the picture, then the next one is chosen.
-    private func perform(_ verdict: Verdict) {
+    /// A verdict from a button or a key: the sign pops up over the picture, then the next one is chosen. A click on the button
+    /// that is already lit takes the choice back, so a choice is never stuck.
+    private func perform(_ verdict: Verdict, fromButton: Bool = false) {
+        if fromButton, model.targets.count <= 1, let item = model.focusItem, model.verdict(of: item) == verdict {
+            model.set(.undecided, advance: false)
+            return
+        }
         if model.mode == .library, verdict == .skip {
             if let onRequestDelete { onRequestDelete() } else { model.set(.skip) }
             return
@@ -100,8 +110,6 @@ struct ViewerPanel: View {
                 case .audio:
                     Image(systemName: "waveform").font(.system(size: 44)).foregroundStyle(.white.opacity(0.4))
                 }
-                topBar(item)
-                if item.kind == .video { TransportBar(player: player, lutName: player.lutName).padding(12).frame(maxHeight: .infinity, alignment: .bottom) }
                 if let flash {
                     Image(systemName: VerdictStyle.symbol(flash, mode: model.mode))
                         .font(.system(size: 54, weight: .heavy))
@@ -131,6 +139,14 @@ struct ViewerPanel: View {
             if model.mode == .library, let usage = model.usage[item.id] {
                 let badge = usage.badge
                 Chip(text: badge.text, symbol: badge.symbol, tint: badge.color, plain: true)
+                    .padding(.horizontal, 4).padding(.vertical, 3).rushesVideoGlass(.capsule)
+            }
+            if model.mode == .library, model.leftOutOnCard.contains(item.id), model.verdict(of: item) == .undecided {
+                Chip(text: String(localized: "Left out on the card"), symbol: "xmark.circle.fill", tint: VerdictStyle.skip, plain: true)
+                    .padding(.horizontal, 4).padding(.vertical, 3).rushesVideoGlass(.capsule)
+            }
+            if model.isOnDisk(item) {
+                Chip(text: String(localized: "On disk"), symbol: "externaldrive.fill.badge.checkmark", tint: .white, plain: true)
                     .padding(.horizontal, 4).padding(.vertical, 3).rushesVideoGlass(.capsule)
             }
         }
@@ -180,6 +196,7 @@ private struct TransportBar: View {
         ViewThatFits(in: .horizontal) {
             bar(full: true)
             bar(full: false)
+            bar(full: false, time: false)
         }
         .foregroundStyle(.white)
         .padding(.horizontal, 14)
@@ -187,7 +204,7 @@ private struct TransportBar: View {
         .rushesVideoGlass(.capsule)
     }
 
-    private func bar(full: Bool) -> some View {
+    private func bar(full: Bool, time: Bool = true) -> some View {
         HStack(spacing: 12) {
             Button { player.togglePlay() } label: {
                 Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
@@ -196,10 +213,12 @@ private struct TransportBar: View {
                     .contentTransition(.symbolEffect(.replace))
             }
             .buttonStyle(.bouncy)
-            Text(Format.timecode(player.currentTime))
-                .font(.system(size: 12, weight: .medium).monospacedDigit())
-                .foregroundStyle(.white.opacity(0.9))
-                .fixedSize()
+            if time {
+                Text(Format.timecode(player.currentTime))
+                    .font(.system(size: 12, weight: .medium).monospacedDigit())
+                    .foregroundStyle(.white.opacity(0.9))
+                    .fixedSize()
+            }
             Slider(
                 value: Binding(get: { player.currentTime }, set: { player.seek(to: $0) }),
                 in: 0 ... max(player.duration, 0.1)
@@ -308,8 +327,11 @@ struct VerdictBar: View {
         .buttonStyle(.glassProminent)
         .tint(selected ? tint : tint.opacity(0.85))
         .controlSize(.large)
+        // The choice that is made has a ring, so it can be seen, and a click on it takes it back.
+        .overlay { Capsule().strokeBorder(Color.white.opacity(selected ? 0.85 : 0), lineWidth: 2).padding(3).allowsHitTesting(false) }
+        .animation(.rushesFade, value: selected)
         .hoverSwell(1.025)
-        .help(title)
+        .help(selected ? LocalizedStringKey("Click again to take it back (R)") : title)
     }
 }
 

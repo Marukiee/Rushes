@@ -36,7 +36,11 @@ public struct CopyProgress: Sendable {
     public var filesTotal: Int
     public var filesDone: Int
     public var currentName: String
+    /// Everything that is read and written, copying and checking together. What the time left is reckoned with.
     public var bytesPerSecond: Double
+    /// How fast the card itself is read, which is the speed a person knows.
+    public var cardBytesPerSecond: Double = 0
+    /// True once the first file is being read back. Copying goes on meanwhile: the two run side by side.
     public var verifying: Bool
 
     public var fraction: Double {
@@ -44,10 +48,22 @@ public struct CopyProgress: Sendable {
         return min(1, Double(bytesCopied + bytesVerified) / Double(bytesTotal * 2))
     }
 
+    /// How much is on the disk, checked or not.
+    public var copiedFraction: Double {
+        guard bytesTotal > 0 else { return 1 }
+        return min(1, Double(bytesCopied) / Double(bytesTotal))
+    }
+
+    /// How much was read back and found to be exactly like the card.
+    public var verifiedFraction: Double {
+        guard bytesTotal > 0 else { return 1 }
+        return min(1, Double(bytesVerified) / Double(bytesTotal))
+    }
+
     public var remaining: TimeInterval? {
         guard bytesPerSecond > 1_000_000 else { return nil }
         let left = Double(bytesTotal * 2) - Double(bytesCopied + bytesVerified)
-        return max(0, left / (bytesPerSecond * 2))
+        return max(0, left / bytesPerSecond)
     }
 }
 
@@ -81,6 +97,7 @@ public final class FileCopier: @unchecked Sendable {
     private let stateLock = NSLock()
     private var progress: CopyProgress
     private let speed = SpeedMeter()
+    private let cardSpeed = SpeedMeter()
     private var lastReport = Date.distantPast
 
     public init(
@@ -222,6 +239,7 @@ public final class FileCopier: @unchecked Sendable {
                 }
                 update { $0.bytesCopied += UInt64(count) * UInt64(outputs.count) }
                 speed.add(UInt64(count) * UInt64(outputs.count))
+                cardSpeed.add(UInt64(count))
             }
             for output in outputs { _ = fsync(output.fd) }
         } catch {
@@ -261,6 +279,7 @@ public final class FileCopier: @unchecked Sendable {
         guard force || now.timeIntervalSince(lastReport) > 0.15 else { stateLock.unlock(); return }
         lastReport = now
         progress.bytesPerSecond = speed.perSecond
+        progress.cardBytesPerSecond = cardSpeed.perSecond
         let snapshot = progress
         stateLock.unlock()
         onProgress(snapshot)

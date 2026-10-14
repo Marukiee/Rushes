@@ -215,7 +215,8 @@ private struct DiskSettings: View {
     @AppStorage(PrefKey.destinationUUID) private var uuid = ""
     @AppStorage(PrefKey.destinationName) private var diskName = ""
     @AppStorage(PrefKey.destinationSubfolder) private var subfolder = ""
-    @AppStorage(PrefKey.undecidedMeansKeep) private var undecidedKeep = true
+    @AppStorage(PrefKey.undecidedMeansKeep) private var undecidedKeep = false
+    @AppStorage(PrefKey.copyKinds) private var kinds = CopyKinds.all.rawValue
     @AppStorage(PrefKey.backupEnabled) private var backup = false
     @AppStorage(PrefKey.backupUUID) private var backupUUID = ""
     @AppStorage(PrefKey.backupName) private var backupName = ""
@@ -239,7 +240,12 @@ private struct DiskSettings: View {
                 Text("Each card gets its own folder there: SD 1, SD 2 and on. The same card goes back into its own folder.")
             }
             Section("What gets copied") {
-                DescribedToggle("Clips and photos I have not judged are copied too", subtitle: "Off: only what you marked Keep is copied.", isOn: $undecidedKeep)
+                Picker("Copy", selection: $kinds) {
+                    Text("Videos and photos").tag(CopyKinds.all.rawValue)
+                    Text("Only videos").tag(CopyKinds.video.rawValue)
+                    Text("Only photos").tag(CopyKinds.photo.rawValue)
+                }
+                DescribedToggle("Clips and photos I have not judged are copied too", subtitle: "Off: only what you marked Keep is copied. What you did not judge stays on the card for next time.", isOn: $undecidedKeep)
             }
             Section {
                 DescribedToggle("Also copy everything to a second disk", isOn: $backup)

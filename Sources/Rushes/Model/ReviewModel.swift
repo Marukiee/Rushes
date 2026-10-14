@@ -9,8 +9,10 @@ enum ReviewKindFilter: String, CaseIterable, Identifiable {
 
 enum ReviewStateFilter: String, CaseIterable, Identifiable {
     case all, undecided, keep, skip, suggested
+    // Card only.
+    case notOnDisk, onDisk
     // Library only.
-    case unused, used, protected, duplicates
+    case unused, used, protected, duplicates, leftOut
     var id: String { rawValue }
 }
 
@@ -37,6 +39,7 @@ final class ReviewModel {
 
     struct UndoStep {
         var verdicts: [String: Verdict] = [:]
+        var ratings: [String: Int] = [:]
         var trashed: [(item: MediaItem, moved: [TrashService.Moved])] = []
         var text: String
     }
@@ -54,9 +57,22 @@ final class ReviewModel {
     private(set) var suggestions: [String: Suggestion] = [:]
     /// Card: what the ledger says about each item.
     var statuses: [String: ItemStatus] = [:]
+    /// Card: what was on the disk, or left out, when the card came in. It stays out of the way unless asked for. What is copied
+    /// while the card is in stays in view, so the choices made for it can still be seen and changed.
+    var knownAtStart: Set<String> = []
     /// Library: what DaVinci Resolve says about each item.
     var usage: [String: ResolveIndex.Usage] = [:]
     var duplicates: Set<String> = []
+    /// Library: what was left out while the card was in, and was copied anyway. The disk only needs what was kept.
+    var leftOutOnCard: Set<String> = []
+    /// A reset of many choices at once waits for a yes.
+    var pendingReset: ResetRequest?
+
+    struct ResetRequest: Identifiable {
+        let id = UUID()
+        let title: String
+        let items: [MediaItem]
+    }
 
     var kindFilter: ReviewKindFilter = .all
     var stateFilter: ReviewStateFilter = .all
@@ -128,9 +144,29 @@ final class ReviewModel {
         allItems.filter { isActionable($0) && self.verdict(of: $0) == verdict }.reduce(0) { $0 + $1.totalBytes }
     }
 
-    /// On a card, items already copied are not up for a choice unless the person asks to see them.
+    /// On a card, what was already handled before it came in is not up for a choice unless the person asks to see it.
     func isActionable(_ item: MediaItem) -> Bool {
-        mode == .library || showKnown || status(of: item) == .new
+        mode == .library || showKnown || !knownAtStart.contains(item.id)
+    }
+
+    /// Card: every file of it is on the disk already.
+    func isOnDisk(_ item: MediaItem) -> Bool { mode == .card && status(of: item) == .imported }
+
+    /// What a copy would take now: what is chosen (or everything) of the right kind that is not on the disk yet.
+    func toCopy(kinds: CopyKinds, undecidedMeansKeep: Bool, everything: Bool = false, only: Set<String>? = nil) -> (count: Int, bytes: UInt64) {
+        var count = 0
+        var bytes: UInt64 = 0
+        for item in allItems where isActionable(item) && kinds.includes(item.kind) && status(of: item) != .imported {
+            if let only, !only.contains(item.id) { continue }
+            let verdict = verdict(of: item)
+            if !everything {
+                if verdict == .skip { continue }
+                if verdict == .undecided, !undecidedMeansKeep || status(of: item) == .skippedBefore { continue }
+            }
+            count += 1
+            bytes += item.totalBytes
+        }
+        return (count, bytes)
     }
 
     var actionableCount: Int { allItems.filter(isActionable).count }
@@ -157,6 +193,9 @@ final class ReviewModel {
             case .keep: return verdict(of: item) == .keep
             case .skip: return verdict(of: item) == .skip
             case .suggested: return suggestions[item.id] != nil
+            case .notOnDisk: return status(of: item) != .imported
+            case .onDisk: return status(of: item) == .imported
+            case .leftOut: return leftOutOnCard.contains(item.id)
             case .unused: return usage[item.id]?.status == .unused && verdict(of: item) != .keep
             case .used: return usage[item.id].map { $0.status == .used || $0.status == .poolOnly } ?? false
             case .protected: return verdict(of: item) == .keep
@@ -219,7 +258,8 @@ final class ReviewModel {
 
     // MARK: Verdicts
 
-    private var targets: [MediaItem] {
+    /// What a choice applies to: the selection, or else the one in view.
+    var targets: [MediaItem] {
         let ids = selection.isEmpty ? (focusID.map { [$0] } ?? []) : Array(selection)
         let wanted = Set(ids)
         return visible.filter { wanted.contains($0.id) }
@@ -235,16 +275,7 @@ final class ReviewModel {
             trash(affected)
             return
         }
-        var before: [String: Verdict] = [:]
-        for item in affected {
-            before[item.id] = self.verdict(of: item)
-            if verdict == .undecided { verdicts.removeValue(forKey: item.id) } else { verdicts[item.id] = verdict }
-            persistChoice?(item, verdict == .undecided ? nil : verdict, ratings[item.id] ?? 0)
-        }
-        markSkipped?(affected, verdict == .skip)
-        undoStack.append(UndoStep(verdicts: before, text: Self.text(for: verdict, count: affected.count)))
-        trimUndo()
-        refresh()
+        change(affected, to: verdict, text: Self.text(for: verdict, count: affected.count))
         if advance, Prefs.bool(PrefKey.advanceAfterVerdict), affected.count == 1 {
             // After the item that was just judged, whether or not it is still in the filtered list.
             if let previousFocus, let old = allItems.firstIndex(where: { $0.id == previousFocus }) {
@@ -252,6 +283,55 @@ final class ReviewModel {
                 if let following { focus(following.id) } else if wasLast, let last = visible.last { focus(last.id) }
             }
         }
+    }
+
+    /// Every change of a choice goes through here, so it is remembered, can be undone and shows at once.
+    private func change(_ items: [MediaItem], to verdict: Verdict, resetStars: Bool = false, text: String) {
+        guard !items.isEmpty else { return }
+        var before: [String: Verdict] = [:]
+        var stars: [String: Int] = [:]
+        for item in items {
+            before[item.id] = self.verdict(of: item)
+            stars[item.id] = ratings[item.id] ?? 0
+            if verdict == .undecided { verdicts.removeValue(forKey: item.id) } else { verdicts[item.id] = verdict }
+            if resetStars { ratings[item.id] = nil }
+            persistChoice?(item, verdict == .undecided ? nil : verdict, ratings[item.id] ?? 0)
+        }
+        markSkipped?(items, verdict == .skip)
+        undoStack.append(UndoStep(verdicts: before, ratings: resetStars ? stars : [:], text: text))
+        trimUndo()
+        refresh()
+    }
+
+    /// Back to the start for the ones in hand: no choice and no stars.
+    func reset() {
+        let affected = targets
+        change(affected, to: .undecided, resetStars: true, text: String(localized: "Reset \(affected.count)"))
+        message = String(localized: "Reset \(affected.count)")
+    }
+
+    func reset(_ items: [MediaItem]) {
+        change(items, to: .undecided, resetStars: true, text: String(localized: "Reset \(items.count)"))
+        message = String(localized: "Reset \(items.count)")
+    }
+
+    // MARK: Days
+
+    /// Everything of one day that is up for a choice, whatever the filter shows.
+    func items(ofDay day: Date) -> [MediaItem] {
+        let calendar = Calendar.current
+        return allItems.filter { isActionable($0) && calendar.isDate(date(of: $0), inSameDayAs: day) }
+    }
+
+    func selectDay(_ section: ReviewSection) {
+        userChose = true
+        selection = Set(section.items.map(\.id))
+        if let focusID, selection.contains(focusID) { return }
+        focusID = section.items.first?.id
+    }
+
+    func setDay(_ section: ReviewSection, to verdict: Verdict) {
+        change(section.items, to: verdict, text: Self.text(for: verdict, count: section.items.count))
     }
 
     private static func text(for verdict: Verdict, count: Int) -> String {
@@ -263,7 +343,14 @@ final class ReviewModel {
     }
 
     func rate(_ stars: Int) {
-        for item in targets {
+        let affected = targets
+        var before: [String: Int] = [:]
+        for item in affected { before[item.id] = ratings[item.id] ?? 0 }
+        if !affected.isEmpty {
+            undoStack.append(UndoStep(ratings: before, text: String(localized: "Stars for \(affected.count)")))
+            trimUndo()
+        }
+        for item in affected {
             ratings[item.id] = stars == 0 ? nil : stars
             persistChoice?(item, verdicts[item.id], stars)
         }
@@ -271,35 +358,17 @@ final class ReviewModel {
 
     func applySuggestions() {
         let chosen = visible.filter { suggestions[$0.id] != nil && verdict(of: $0) == .undecided }
-        guard !chosen.isEmpty else { return }
-        var before: [String: Verdict] = [:]
-        for item in chosen {
-            before[item.id] = .undecided
-            verdicts[item.id] = .skip
-        }
-        markSkipped?(chosen, true)
-        undoStack.append(UndoStep(verdicts: before, text: String(localized: "Left out \(chosen.count) suggested")))
-        refresh()
+        change(chosen, to: .skip, text: String(localized: "Left out \(chosen.count) suggested"))
     }
 
     func keepAllUndecided() {
         let chosen = visible.filter { verdict(of: $0) == .undecided }
-        var before: [String: Verdict] = [:]
-        for item in chosen {
-            before[item.id] = .undecided
-            verdicts[item.id] = .keep
-        }
-        undoStack.append(UndoStep(verdicts: before, text: String(localized: "Kept \(chosen.count)")))
-        refresh()
+        change(chosen, to: .keep, text: String(localized: "Kept \(chosen.count)"))
     }
 
     func clearAll() {
-        guard !verdicts.isEmpty else { return }
-        undoStack.append(UndoStep(verdicts: verdicts, text: String(localized: "Cleared all")))
-        let skipped = allItems.filter { verdicts[$0.id] == .skip }
-        markSkipped?(skipped, false)
-        verdicts = [:]
-        refresh()
+        let chosen = allItems.filter { isActionable($0) && verdicts[$0.id] != nil }
+        change(chosen, to: .undecided, text: String(localized: "Cleared all"))
     }
 
     private func trimUndo() {
@@ -337,10 +406,14 @@ final class ReviewModel {
         } else {
             for (id, verdict) in step.verdicts {
                 if verdict == .undecided { verdicts.removeValue(forKey: id) } else { verdicts[id] = verdict }
-                if let item = item(id) { persistChoice?(item, verdict == .undecided ? nil : verdict, ratings[id] ?? 0) }
+            }
+            for (id, stars) in step.ratings { ratings[id] = stars == 0 ? nil : stars }
+            for id in Set(step.verdicts.keys).union(step.ratings.keys) {
+                if let item = item(id) { persistChoice?(item, verdicts[id], ratings[id] ?? 0) }
             }
             let reverted = step.verdicts.keys.compactMap { item($0) }
             markSkipped?(reverted.filter { verdict(of: $0) != .skip }, false)
+            markSkipped?(reverted.filter { verdict(of: $0) == .skip }, true)
             message = String(localized: "Undone: \(step.text)")
         }
         refresh()

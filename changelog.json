@@ -1,5 +1,42 @@
 [
   {
+    "version": "0.2.0",
+    "date": "2026-10-14",
+    "highlight": true,
+    "en": {
+      "title": "Copy what you choose",
+      "new": [
+        "Only what you keep is copied, the rest stays on the card",
+        "Copy only the videos, only the photos, or both",
+        "Every day has a menu: select, keep, copy or reset that day",
+        "R resets the choice and the stars, and a lit button clicks off",
+        "Choices and stars are remembered when the card comes back",
+        "What you left out on the card can go from its folder in one go"
+      ],
+      "better": [
+        "The copy shows in the window, on every page",
+        "Copied and checked show apart, with the right speed and time left",
+        "Copying a second day after the first works"
+      ]
+    },
+    "nl": {
+      "title": "Kopieer wat je kiest",
+      "new": [
+        "Alleen wat je behoudt wordt gekopieerd, de rest blijft op de kaart",
+        "Kopieer alleen de video's, alleen de foto's, of allebei",
+        "Elke dag heeft een menu: selecteren, behouden, kopiëren of terugzetten",
+        "R zet keuze en sterren terug, en een knop die aan staat klik je uit",
+        "Keuzes en sterren blijven bewaard als de kaart terugkomt",
+        "Wat je op de kaart oversloeg kan in een keer uit de map"
+      ],
+      "better": [
+        "Het kopiëren staat in het venster, op elke pagina",
+        "Gekopieerd en gecontroleerd apart, met de juiste snelheid en tijd",
+        "Een tweede dag kopiëren na de eerste werkt"
+      ]
+    }
+  },
+  {
     "version": "0.1.3",
     "date": "2026-10-11",
     "highlight": false,

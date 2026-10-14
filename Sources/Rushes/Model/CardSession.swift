@@ -109,6 +109,7 @@ final class ImportJob: Identifiable {
     var ejected = false
     var resolve: ResolveOutcome?
     var integrityNote: String?
+    var request = ImportRequest()
     let cancelFlag = CancelFlag()
 
     init(cardName: String, cardUUID: String, folderName: String, folder: URL, plan: ImportPlan) {
