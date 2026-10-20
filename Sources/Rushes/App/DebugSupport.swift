@@ -77,6 +77,14 @@ enum DebugSupport {
 
     /// Called when the main window has come up, so a page can be chosen without clicking.
     static func windowAppeared() {
+        // `RUSHES_DEBUG_WINDOW=1800x1000` sets the size of the main window, to see how a page lays out at that size.
+        if let size = variable("RUSHES_DEBUG_WINDOW")?.split(separator: "x").compactMap({ Double($0) }), size.count == 2 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                if let window = NSApp.windows.first(where: { $0.isVisible && $0.contentView != nil && $0.frame.width > 600 }) {
+                    window.setFrame(NSRect(x: 60, y: 60, width: size[0], height: size[1]), display: true)
+                }
+            }
+        }
         guard let page = variable("RUSHES_DEBUG_PAGE") else { return }
         let model = AppModel.shared
         switch page {

@@ -13,7 +13,8 @@ struct ReviewBody<Banner: View>: View {
         VStack(spacing: Space.m) {
             banner
             GeometryReader { geometry in
-                let gridWidth = max(340, min(geometry.size.width * 0.34, 480))
+                // Two columns, and a third when the window is wide enough for three thumbnails that are still a good size.
+                let gridWidth = geometry.size.width >= 1240 ? min(geometry.size.width * 0.38, 640) : max(340, min(geometry.size.width * 0.34, 460))
                 HStack(alignment: .top, spacing: Space.xl) {
                     // The choice of what to show floats right over what it filters, in glass, and the list scrolls under it.
                     ZStack(alignment: .top) {
@@ -283,7 +284,8 @@ struct DetailsCard: View {
                 Divider()
             }
             LazyVGrid(
-                columns: [GridItem(.flexible(), alignment: .topLeading), GridItem(.flexible(), alignment: .topLeading)],
+                // Three across when the card is wide, so it takes two rows instead of three and the picture keeps its height.
+                columns: [GridItem(.adaptive(minimum: 160), alignment: .topLeading)],
                 alignment: .leading, spacing: Space.m
             ) {
                 cell("Camera", meta?.camera)

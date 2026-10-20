@@ -1,5 +1,26 @@
 [
   {
+    "version": "0.2.1",
+    "date": "2026-10-20",
+    "highlight": false,
+    "en": {
+      "title": "Bigger previews",
+      "better": [
+        "The picture gets more room, so landscape photos are big",
+        "Three thumbnails side by side in a wide window",
+        "The details take two rows instead of three"
+      ]
+    },
+    "nl": {
+      "title": "Grotere previews",
+      "better": [
+        "Het beeld krijgt meer ruimte, zodat liggende foto's groot zijn",
+        "Drie thumbnails naast elkaar in een breed venster",
+        "De details passen in twee rijen in plaats van drie"
+      ]
+    }
+  },
+  {
     "version": "0.2.0",
     "date": "2026-10-14",
     "highlight": true,

@@ -18,9 +18,10 @@ struct ViewerPanel: View {
             // the buttons. The frame is exactly the shape of the picture: no bars, and the clip goes round that.
             // The details and the look ahead are both wanted, so the picture gives up height for them before either goes away.
             let barReserve: CGFloat = 76
-            let detailsReserve: CGFloat = showDetails ? (model.mode == .library ? 280 : 222) : 0
+            let detailsReserve: CGFloat = showDetails ? (model.mode == .library ? 240 : 176) : 0
             let upNextReserve: CGFloat = 104
-            let tallest = min(geometry.size.height * 0.6, max(200, geometry.size.height - barReserve - detailsReserve - upNextReserve))
+            // The picture comes first: it keeps at least half the height, and the look ahead goes before the picture gets small.
+            let tallest = min(geometry.size.height * 0.64, max(geometry.size.height * 0.5, geometry.size.height - barReserve - detailsReserve - upNextReserve))
             let height = min(geometry.size.width / aspect, tallest)
             let width = height * aspect
             let showUpNext = geometry.size.height - height - barReserve - detailsReserve > upNextReserve - 12

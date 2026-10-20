@@ -72,7 +72,7 @@ struct ClipGrid: View {
     /// Room kept free at the top for a control that floats over the list. The clips pass under it as they scroll.
     var topInset: CGFloat = 0
 
-    private let columns = [GridItem(.adaptive(minimum: 120, maximum: 200), spacing: Space.s)]
+    private let columns = [GridItem(.adaptive(minimum: 150, maximum: 220), spacing: Space.s)]
 
     var body: some View {
         ScrollViewReader { proxy in
