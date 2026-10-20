@@ -183,6 +183,7 @@
 "As shot" = "Zoals opgenomen";
 "Ask for a name for the folder" = "Vraag om een naam voor de map";
 "Asking Resolve..." = "Resolve bevragen...";
+"Back to the list (F)" = "Terug naar de lijst (F)";
 "Back, stop, forward (again for faster)" = "Terug, stop, vooruit (nog eens voor sneller)";
 "Behaviour" = "Gedrag";
 "Bin name" = "Binnaam";
@@ -342,6 +343,7 @@
 "Folders named SD 1, SD 2 and so on show up here. The first card you copy makes the first one." = "Mappen met de namen SD 1, SD 2 enzovoort verschijnen hier. De eerste kaart die je kopieert maakt de eerste.";
 "Format" = "Formaat";
 "Free" = "Vrij";
+"Full screen" = "Volledig scherm";
 "GB" = "GB";
 "General" = "Algemeen";
 "Getting ready..." = "Bezig met voorbereiden...";
@@ -487,6 +489,8 @@
 "Only clips that are in no DaVinci Resolve project, and that you did not protect. They go to the Trash, so you can still put them back." = "Alleen clips die in geen enkel DaVinci Resolve-project staan en die je niet hebt beschermd. Ze gaan naar de prullenbak, dus je kunt ze nog terugzetten.";
 "Only for the preview. The files are never changed." = "Alleen voor het voorbeeld. De bestanden worden nooit veranderd.";
 "Only photos" = "Alleen foto's";
+"Only the picture (F)" = "Alleen het beeld (F)";
+"Only the picture, Escape to go back" = "Alleen het beeld, Esc om terug te gaan";
 "Only videos" = "Alleen video's";
 "Open Resolve" = "Open Resolve";
 "Open Resolve to send footage to it. Reading which clips are used works without." = "Open Resolve om er beeld naartoe te sturen. Lezen welke clips worden gebruikt werkt ook zonder.";

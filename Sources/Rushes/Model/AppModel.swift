@@ -53,6 +53,18 @@ final class AppModel {
     var job: ImportJob?
     private(set) var history: [Ledger.ImportRecord] = []
     var page: AppPage = .overview
+    /// Only the picture: no sidebar, no clips beside it, no bar along the bottom. For looking through photos one by one.
+    var viewing = false {
+        didSet { if !viewing, let window = NSApp.windows.first(where: { $0.styleMask.contains(.fullScreen) }), enteredFullScreen { window.toggleFullScreen(nil); enteredFullScreen = false } }
+    }
+    /// Whether the view mode itself made the window full screen, so leaving it gives the window back as it was.
+    var enteredFullScreen = false
+
+    func toggleFullScreen() {
+        guard let window = NSApp.keyWindow ?? NSApp.windows.first(where: { $0.isVisible && $0.frame.width > 600 }) else { return }
+        enteredFullScreen = !window.styleMask.contains(.fullScreen)
+        window.toggleFullScreen(nil)
+    }
     var reviewSessionID: String?
     var toast: String?
     var alert: AppAlert?

@@ -40,7 +40,7 @@ struct CardReviewPage: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             // While it copies, the bar along the bottom of the window shows how far it is instead.
-            if let review = session.review, session.phase == .ready, review.actionableCount > 0, app.job?.isRunning != true {
+            if let review = session.review, session.phase == .ready, review.actionableCount > 0, app.job?.isRunning != true, !app.viewing {
                 ImportBar(session: session, review: review)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }

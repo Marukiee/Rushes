@@ -8,16 +8,17 @@ struct ReviewBody<Banner: View>: View {
     var showUsage = false
     var onRequestDelete: (() -> Void)?
     @ViewBuilder var banner: Banner
+    @Environment(AppModel.self) private var app
 
     var body: some View {
         VStack(spacing: Space.m) {
-            banner
+            if !app.viewing { banner }
             GeometryReader { geometry in
                 // Two columns, and a third when the window is wide enough for three thumbnails that are still a good size.
                 let gridWidth = geometry.size.width >= 1240 ? min(geometry.size.width * 0.38, 640) : max(340, min(geometry.size.width * 0.34, 460))
                 HStack(alignment: .top, spacing: Space.xl) {
                     // The choice of what to show floats right over what it filters, in glass, and the list scrolls under it.
-                    ZStack(alignment: .top) {
+                    if !app.viewing { ZStack(alignment: .top) {
                         if model.visible.isEmpty {
                             EmptyState(
                                 symbol: model.allItems.isEmpty ? "tray" : "line.3.horizontal.decrease.circle",
@@ -34,7 +35,9 @@ struct ReviewBody<Banner: View>: View {
                         )
                     }
                     .frame(width: gridWidth)
-                    ViewerPanel(model: model, onRequestDelete: onRequestDelete)
+                    .transition(.move(edge: .leading).combined(with: .opacity))
+                    }
+                    ViewerPanel(model: model, viewing: app.viewing, onRequestDelete: onRequestDelete)
                 }
             }
         }
@@ -72,7 +75,27 @@ struct ReviewToolbar: ToolbarContent {
             if model.mode == .card { CardMoreMenu(model: model) }
             KeyHints(mode: model.mode)
             DetailsToggle()
+            ViewModeToggle()
         }
+    }
+}
+
+/// Only the picture, and from there the whole screen. F turns it on and off, Escape leaves it.
+struct ViewModeToggle: View {
+    @Environment(AppModel.self) private var app
+
+    var body: some View {
+        if app.viewing {
+            Button { app.toggleFullScreen() } label: {
+                Label("Full screen", systemImage: "arrow.up.backward.and.arrow.down.forward.rectangle")
+            }
+            .help("Full screen")
+        }
+        Toggle(isOn: Binding(get: { app.viewing }, set: { value in withAnimation(.rushes) { app.viewing = value } })) {
+            Label("View", systemImage: app.viewing ? "rectangle.inset.filled" : "rectangle.expand.vertical")
+        }
+        .toggleStyle(.button)
+        .help(app.viewing ? "Back to the list (F)" : "Only the picture (F)")
     }
 }
 
@@ -204,6 +227,7 @@ struct KeyHints: View {
                     hint("U", "Clear the choice, keep the stars")
                     hint("M", "Sound on or off")
                     hint("C", "LUT on or off")
+                    hint("F", "Only the picture, Escape to go back")
                     hint("=  -  \u{2318}0", "Zoom in or out")
                     hint("I", "Details on or off")
                     hint("⇧ click, ⌘ click", "Select several")

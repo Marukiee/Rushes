@@ -1,4 +1,9 @@
 T = {
+"Full screen": "Volledig scherm",
+"View": "Kijken",
+"Back to the list (F)": "Terug naar de lijst (F)",
+"Only the picture (F)": "Alleen het beeld (F)",
+"Only the picture, Escape to go back": "Alleen het beeld, Esc om terug te gaan",
 "%@ already have another label": "%@ hebben al een ander label",
 "%@ already have stars": "%@ hebben al sterren",
 "%@ kept their own stars.": "%@ hielden hun eigen sterren.",

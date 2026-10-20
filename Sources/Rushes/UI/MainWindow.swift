@@ -5,10 +5,11 @@ import SwiftUI
 struct MainWindow: View {
     @Environment(AppModel.self) private var app
     @Environment(\.openWindow) private var openWindow
+    @LocalState private var columns: NavigationSplitViewVisibility = .all
 
     var body: some View {
         @Bindable var app = app
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $columns) {
             Sidebar()
                 .navigationSplitViewColumnWidth(min: 220, ideal: 240, max: 300)
         } detail: {
@@ -45,6 +46,9 @@ struct MainWindow: View {
             Text("Clips that Resolve already has keep the old folder name and show as offline. Opening every project briefly takes a moment, and the open project is opened again afterwards.")
         }
         .sheet(item: $app.integrity) { state in IntegritySheet(state: state) }
+        // The view mode puts the sidebar away and brings it back when it ends.
+        .onChange(of: app.viewing) { _, viewing in withAnimation(.rushes) { columns = viewing ? .detailOnly : .all } }
+        .onChange(of: app.page) { _, page in if page != .review && page != .library { app.viewing = false } }
         .onAppear {
             WindowOpener.shared.open = { openWindow(id: "main") }
             DebugSupport.windowAppeared()

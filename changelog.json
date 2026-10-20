@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.2.5",
+    "date": "2026-10-20",
+    "highlight": false,
+    "en": {
+      "title": "View mode",
+      "new": [
+        "Only the picture, with F or the button in the toolbar, and from there full screen"
+      ]
+    },
+    "nl": {
+      "title": "Kijkstand",
+      "new": [
+        "Alleen het beeld, met F of de knop in de werkbalk, en van daaruit volledig scherm"
+      ]
+    }
+  },
+  {
     "version": "0.2.4",
     "date": "2026-10-20",
     "highlight": false,

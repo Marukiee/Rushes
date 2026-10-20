@@ -5,6 +5,8 @@ import SwiftUI
 /// The big picture: the clip or photo that is selected, controls to move through it, and the two buttons that matter.
 struct ViewerPanel: View {
     var model: ReviewModel
+    /// In the view mode the picture takes all the room, and only details that fit beside it stay.
+    var viewing = false
     var onRequestDelete: (() -> Void)?
 
     @LocalState private var player = PlayerController()
@@ -27,14 +29,14 @@ struct ViewerPanel: View {
             let standing = aspect < 0.95
             let sideTallest = min(full * 0.85, full - barReserve)
             let sideHeight = min(sideTallest, max(0, geometry.size.width - sideWidth - Space.l) / aspect)
-            let sideBySide = showDetails && standing && model.focusItem != nil && sideHeight >= full * 0.45
-            let detailsReserve: CGFloat = showDetails && !sideBySide ? (model.mode == .library ? 240 : 176) : 0
+            let sideBySide = showDetails && !viewing && standing && model.focusItem != nil && sideHeight >= full * 0.45
+            let detailsReserve: CGFloat = showDetails && !sideBySide && !viewing ? (model.mode == .library ? 240 : 176) : 0
             // The picture comes first, then the details. The look ahead only gets what is left over, it never makes the picture smaller.
-            let cap = standing ? 0.85 : 0.7
+            let cap = viewing ? 1.0 : (standing ? 0.85 : 0.7)
             let tallest = min(full * cap, max(full * 0.5, full - barReserve - detailsReserve))
             let height = sideBySide ? sideHeight : min(geometry.size.width / aspect, tallest)
             let width = height * aspect
-            let showUpNext = full - height - barReserve - detailsReserve > upNextReserve - 12
+            let showUpNext = !viewing && full - height - barReserve - detailsReserve > upNextReserve - 12
             VStack(spacing: Space.l) {
                 HStack(alignment: .top, spacing: Space.l) {
                     stage
@@ -56,7 +58,7 @@ struct ViewerPanel: View {
                     }
                 }
                 VerdictBar(model: model, onKeep: { perform(.keep, fromButton: true) }, onSkip: { perform(.skip, fromButton: true) })
-                if showDetails, !sideBySide, let item = model.focusItem {
+                if showDetails, !sideBySide, !viewing, let item = model.focusItem {
                     DetailsCard(model: model, item: item)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }

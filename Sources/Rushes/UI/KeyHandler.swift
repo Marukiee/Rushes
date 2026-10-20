@@ -90,6 +90,7 @@ struct KeyHandler: NSViewRepresentable {
             case 51, 117: perform(.skip); return true                         // delete
             case 48: model.moveToNextUndecided(); return true                 // tab
             case 53:                                                          // escape
+                if AppModel.shared.viewing { withAnimation(.rushes) { AppModel.shared.viewing = false }; return true }
                 if model.selection.count > 1 { model.focus(model.focusID) ; return true }
                 return false
             default: break
@@ -110,6 +111,7 @@ struct KeyHandler: NSViewRepresentable {
             case "z": model.undo(); return true
             case "m": player.muted.toggle(); return true
             case "c": player.toggleLook(); return true
+            case "f": withAnimation(.rushes) { AppModel.shared.viewing.toggle() }; return true
             case "i": toggleDetails(); return true
             case "0": model.rate(0); return true
             case "1", "2", "3", "4", "5": model.rate(Int(key) ?? 0); return true

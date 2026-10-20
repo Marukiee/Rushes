@@ -137,6 +137,8 @@ enum DebugSupport {
         case "zoom":
             // `zoom:<factor>` zooms the photo in view from its middle.
             PhotoZoom.current?.zoom(by: CGFloat(Double(parts.last ?? "2") ?? 2))
+        case "view":
+            withAnimation(.rushes) { model.viewing.toggle() }
         case "look":
             PlayerController.current?.toggleLook()
         case "pause":
