@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.2.6",
+    "date": "2026-10-20",
+    "highlight": false,
+    "en": {
+      "title": "Stars for the camera",
+      "new": [
+        "Five stars go into the photo the way the camera writes them, so the camera and Sony's Creators' App see them"
+      ]
+    },
+    "nl": {
+      "title": "Sterren voor de camera",
+      "new": [
+        "Vijf sterren gaan in de foto zoals de camera ze schrijft, zodat de camera en Creators' App van Sony ze zien"
+      ]
+    }
+  },
+  {
     "version": "0.2.5",
     "date": "2026-10-20",
     "highlight": false,

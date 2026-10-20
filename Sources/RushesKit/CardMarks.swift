@@ -9,8 +9,9 @@ public enum CardMark: String, Sendable, CaseIterable {
     case flag
 }
 
-/// Writes a rating or a label next to a file on the card, in an XMP sidecar (`DSC0001.xmp` next to `DSC0001.ARW`). The original
-/// file is never changed: its name, size and time are what Rushes knows it by, and a raw file is not something to write into.
+/// Puts a rating or a label on a file of the card. Stars on a photo go into the photo the way the camera writes them (see
+/// `InFileRating`, which changes a few bytes in place and keeps the size and the time). Everything else goes in an XMP sidecar
+/// next to the file (`C0001.xmp` next to `C0001.MP4`).
 public enum CardMarker {
     public static let label = "Green"
 
@@ -27,8 +28,11 @@ public enum CardMarker {
     /// given on the camera itself.
     public static func existing(_ item: MediaItem, root: URL) -> Existing {
         var found = Existing()
+        for url in photoFiles(item, root: root) {
+            if let stars = InFileRating.read(url) { found.rating = max(found.rating ?? 0, stars) }
+        }
         if let text = try? String(contentsOf: sidecarURL(for: item, root: root), encoding: .utf8) {
-            found.rating = value(of: "xmp:Rating", in: text).flatMap { Int($0) }
+            if found.rating == nil { found.rating = value(of: "xmp:Rating", in: text).flatMap { Int($0) } }
             found.label = value(of: "xmp:Label", in: text)
         }
         if found.rating == nil, item.kind == .photo {
@@ -48,7 +52,30 @@ public enum CardMarker {
         return found
     }
 
-    /// Puts the mark on an item. Returns false when it already had it.
+    /// The photo files of an item that can carry stars themselves: the raw file and its JPEG twin.
+    static func photoFiles(_ item: MediaItem, root: URL) -> [URL] {
+        guard item.kind == .photo else { return [] }
+        return ([item.primary.rel] + item.companions.filter { $0.role == .pair }.map(\.entry.rel)).map { root.appendingPathComponent($0) }
+    }
+
+    /// Where the stars of an item ended up.
+    public enum Placement: Sendable { case inFile, sidecar, unchanged }
+
+    /// Stars go into the photo itself where the camera keeps them, so the camera and Sony's Creators' App see them. A video,
+    /// or a photo without room for a rating, gets them in a sidecar instead.
+    public static func giveStars(_ stars: Int, to item: MediaItem, root: URL) throws -> Placement {
+        let files = photoFiles(item, root: root).filter { InFileRating.canHold($0) }
+        if !files.isEmpty {
+            var changed = false
+            for url in files where InFileRating.read(url) != stars {
+                changed = try InFileRating.write(stars, to: url) || changed
+            }
+            return changed ? .inFile : .unchanged
+        }
+        return try write(.stars, to: item, root: root) ? .sidecar : .unchanged
+    }
+
+    /// Puts the mark on an item in its sidecar. Returns false when it already had it.
     @discardableResult
     public static func write(_ mark: CardMark, to item: MediaItem, root: URL) throws -> Bool {
         let url = sidecarURL(for: item, root: root)

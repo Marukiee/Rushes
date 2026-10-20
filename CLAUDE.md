@@ -25,8 +25,11 @@ scripts                bouwen, tekenen, releasen, teksten
 ## Ontwerpbesluiten die niet opnieuw ter discussie staan
 
 - **De kaart wordt alleen gelezen.** Niets op de kaart wordt veranderd of gewist. Wissen na controle staat op de roadmap, niet erin.
-  Eén uitzondering, als de gebruiker erom vraagt: sterren of een label op de kaart zetten (`CardMarker`). Dat gaat in een XMP-sidecar
-  naast het bestand (`DSC0001.xmp`), nooit in het origineel, want naam, grootte en tijd zijn hoe Rushes een bestand herkent.
+  Eén uitzondering, als de gebruiker erom vraagt: sterren of een label op de kaart zetten (`CardMarker`). Sterren op een foto gaan in
+  het XMP-blok in de foto zelf, zoals een Sony-camera ze schrijft (`<xmp:Rating>`, tag 0x02BC in een ARW), want alleen zo zien de camera
+  en Creators' App ze. Dat gebeurt ter plekke met de opvulling van dat blok (`InFileRating`): het bestand blijft tot op de byte even
+  groot en houdt zijn tijd, want naam, grootte en tijd zijn hoe Rushes een bestand herkent. Het Sony-veld 0x2002 is niet de beoordeling,
+  daar blijft Rushes van af. Video's, labels en foto's zonder ruimte krijgen een XMP-sidecar ernaast (`C0001.xmp`).
 - **Elk bestand wordt gecontroleerd.** SHA-256 tijdens het lezen, schrijven onder `.rushes-part`, hernoemen, terugleze van de schijf zelf
   (`F_NOCACHE`) en vergelijken. Een kopie telt pas als ze klopt.
 - **Bestanden worden herkend op naam, grootte en tijd**, niet op naam alleen. Een kaart die is geformatteerd begint bij C0001

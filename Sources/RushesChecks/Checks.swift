@@ -295,6 +295,44 @@ enum MiscTests {
         expect(CardMarker.existing(item, root: root).rating == 5)
     }
 
+    static func starsGoIntoThePhotoLikeTheCameraDoes() throws {
+        // An ARW as a Sony camera writes it, cut down: a TIFF header, the first IFD with only the XMP tag, and a padded packet.
+        func photo(rating: Int?) -> Data {
+            let description = rating.map { "\n <rdf:Description rdf:about=''\n  xmlns:xmp='http://ns.adobe.com/xap/1.0/'>\n  <xmp:Rating>\($0)</xmp:Rating>\n </rdf:Description>" } ?? ""
+            var packet = "<?xpacket begin='\u{FEFF}' id='W5M0MpCehiHzreSzNTczkc9d'?>\n<x:xmpmeta xmlns:x='adobe:ns:meta/'>\n<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>\(description)\n</rdf:RDF>\n</x:xmpmeta>\n"
+            packet += String(repeating: " ", count: 1200 - packet.utf8.count) + "<?xpacket end='w'?>"
+            let xmp = Array(packet.utf8)
+            var bytes: [UInt8] = [0x49, 0x49, 0x2A, 0x00, 8, 0, 0, 0, 1, 0]
+            let count = UInt32(xmp.count), offset = UInt32(26)
+            bytes += [0xBC, 0x02, 1, 0] + withUnsafeBytes(of: count.littleEndian, Array.init) + withUnsafeBytes(of: offset.littleEndian, Array.init)
+            bytes += [0, 0, 0, 0]
+            return Data(bytes + xmp + [UInt8](repeating: 0xAB, count: 500))
+        }
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("rushes-stars-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        for start in [nil, 2] as [Int?] {
+            let url = folder.appendingPathComponent("DSC\(start ?? 0).ARW")
+            let original = photo(rating: start)
+            try original.write(to: url)
+            let time = Date(timeIntervalSince1970: 1_790_000_000)
+            try FileManager.default.setAttributes([.modificationDate: time], ofItemAtPath: url.path)
+            expect(InFileRating.read(url) == start)
+            expect(InFileRating.canHold(url))
+            expect(try InFileRating.write(5, to: url))
+            let after = try Data(contentsOf: url)
+            expect(InFileRating.read(url) == 5, "five stars inside the photo")
+            expect(after.count == original.count, "the photo keeps its size to the byte")
+            expect((try? FileManager.default.attributesOfItem(atPath: url.path)[.modificationDate] as? Date) == time, "and its time")
+            expect(after.suffix(500) == original.suffix(500), "the picture itself is untouched")
+        }
+        // A file that is not a photo the camera made has no place for stars, and is not touched.
+        let other = folder.appendingPathComponent("note.ARW")
+        try Data("plain".utf8).write(to: other)
+        expect(!InFileRating.canHold(other))
+        expect(try !InFileRating.write(5, to: other))
+    }
+
     static func cardNames() {
         expect(CardNaming.nextNumber(ledgerHighest: 2, existingFolders: ["SD 3 Zweden", "SD 4", "Backups"]) == 5)
         expect(CardNaming.folderName(number: 5, name: "Zweden: dag/1") == "SD 5 Zweden dag 1")

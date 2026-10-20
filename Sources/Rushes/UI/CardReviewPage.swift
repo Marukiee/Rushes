@@ -192,7 +192,7 @@ private struct ImportBar: View {
                 }
             case .stars, .flag:
                 Text("On the card, nothing is copied").font(.caption.weight(.medium))
-                Text(action == .stars ? "Next to each file, as five stars" : "Next to each file, as a green label")
+                Text(action == .stars ? "In each photo, as the camera rates" : "Next to each file, as a green label")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
@@ -252,7 +252,7 @@ private struct ImportBar: View {
                     Label("Five stars for \(chosen.count)", systemImage: "star.fill").fixedSize()
                 }
                 .disabled(marking || chosen.isEmpty)
-                .help("Puts five stars next to what you kept, on the card, for every app that filters on stars")
+                .help("Puts five stars in what you kept, on the card, the way the camera does, so the camera and Creators' App see them")
             case .flag:
                 Button { start(.flag, items: chosen) } label: {
                     Label("Flag \(chosen.count)", systemImage: "flag.fill").fixedSize()
@@ -298,8 +298,8 @@ private struct ImportBar: View {
         let root = review.root
         marking = true
         Task {
-            let result = await Task.detached(priority: .userInitiated) { () -> (written: [String], kept: Int, failure: String?) in
-                var written: [String] = [], kept = 0
+            let result = await Task.detached(priority: .userInitiated) { () -> (written: [String], kept: Int, beside: Int, failure: String?) in
+                var written: [String] = [], kept = 0, beside = 0
                 for item in items {
                     if !overwrite {
                         let existing = CardMarker.existing(item, root: root)
@@ -307,13 +307,17 @@ private struct ImportBar: View {
                         if other { kept += 1; continue }
                     }
                     do {
-                        try CardMarker.write(mark, to: item, root: root)
+                        if mark == .stars {
+                            if try CardMarker.giveStars(5, to: item, root: root) == .sidecar { beside += 1 }
+                        } else {
+                            try CardMarker.write(mark, to: item, root: root)
+                        }
                         written.append(item.id)
                     } catch {
-                        return (written, kept, error.localizedDescription)
+                        return (written, kept, beside, error.localizedDescription)
                     }
                 }
-                return (written, kept, nil)
+                return (written, kept, beside, nil)
             }.value
             marking = false
             // Keeping means five stars here too, so what the app shows matches what is on the card.
@@ -331,6 +335,10 @@ private struct ImportBar: View {
                     ? String(localized: "\(result.written.count) now have five stars on the card.")
                     : String(localized: "\(result.written.count) are now flagged on the card.")
                 if result.kept > 0 { text += " " + String(localized: "\(result.kept) kept their own stars.") }
+                if result.beside > 0 { text += " " + String(localized: "\(result.beside) videos or files without room have them in a file beside them, which the camera does not read.") }
+                if mark == .stars, result.written.count > result.beside {
+                    text += " " + String(localized: "If the camera does not show them, choose Recover Image DB in its menu.")
+                }
                 outcome = text
             }
         }

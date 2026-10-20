@@ -1,4 +1,8 @@
 T = {
+"%@ videos or files without room have them in a file beside them, which the camera does not read.": "%@ video's of bestanden zonder ruimte hebben ze in een bestand ernaast, dat leest de camera niet.",
+"If the camera does not show them, choose Recover Image DB in its menu.": "Toont de camera ze niet, kies dan Recover Image DB (Beeld-DB herstellen) in het menu van de camera.",
+"In each photo, as the camera rates": "In elke foto, zoals de camera beoordeelt",
+"Puts five stars in what you kept, on the card, the way the camera does, so the camera and Creators' App see them": "Zet vijf sterren in wat je behoudt, op de kaart, zoals de camera dat doet, zodat de camera en Creators' App ze zien",
 "Full screen": "Volledig scherm",
 "View": "Kijken",
 "Back to the list (F)": "Terug naar de lijst (F)",

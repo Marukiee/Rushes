@@ -57,6 +57,22 @@ if CommandLine.arguments.count > 2, CommandLine.arguments[1] == "usage" {
     exit(0)
 }
 
+// swift run RushesChecks rating <photo> [stars]: where the photo keeps a star rating, what it says, and with stars sets it.
+if CommandLine.arguments.count > 2, CommandLine.arguments[1] == "rating" {
+    let url = URL(fileURLWithPath: CommandLine.arguments[2])
+    let data = try! Data(contentsOf: url, options: .alwaysMapped)
+    let places = InFileRating.places(in: data)
+    print("\(url.lastPathComponent): \(data.count) bytes, \(places.count) places, rating \(InFileRating.read(url).map(String.init) ?? "none"), room for one: \(InFileRating.canHold(url))")
+    for place in places { print("  \(place.kind) at \(place.offset), \(place.length) bytes") }
+    if CommandLine.arguments.count > 3, let stars = Int(CommandLine.arguments[3]) {
+        print("  write \(stars): \((try? InFileRating.write(stars, to: url)) ?? false), now \(InFileRating.read(url).map(String.init) ?? "none")")
+    }
+    if let source = CGImageSourceCreateWithURL(url as CFURL, nil), let metadata = CGImageSourceCopyMetadataAtIndex(source, 0, nil) {
+        print("  ImageIO xmp:Rating = \(CGImageMetadataCopyStringValueWithPath(metadata, nil, "xmp:Rating" as CFString) as String? ?? "none")")
+    }
+    exit(0)
+}
+
 // swift run RushesChecks lut <clip> <cube file or "builtin"> <out.png>: one frame of a clip through a LUT.
 if CommandLine.arguments.count > 4, CommandLine.arguments[1] == "lut" {
     import_ci()
@@ -90,6 +106,7 @@ let tests: [(String, () throws -> Void)] = [
     ("LedgerTests.remembersFilesCardsAndSkips", LedgerTests.remembersFilesCardsAndSkips),
     ("MiscTests.theSlotOfAMacIsStillACard", MiscTests.theSlotOfAMacIsStillACard),
     ("MiscTests.marksGoInASidecarAndNeverIntoTheFile", MiscTests.marksGoInASidecarAndNeverIntoTheFile),
+    ("MiscTests.starsGoIntoThePhotoLikeTheCameraDoes", MiscTests.starsGoIntoThePhotoLikeTheCameraDoes),
     ("MiscTests.cardNames", MiscTests.cardNames),
     ("MiscTests.binNames", MiscTests.binNames),
     ("MiscTests.cubeLUT", MiscTests.cubeLUT),

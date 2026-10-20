@@ -68,6 +68,7 @@
 "%@ of them are used in DaVinci Resolve and stay. The rest goes to the Trash, so you can still put it back." = "%@ daarvan worden in DaVinci Resolve gebruikt en blijven staan. De rest gaat naar de prullenbak, dus je kunt het nog terugzetten.";
 "%@ or more" = "%@ of meer";
 "%@ unused" = "%@ ongebruikt";
+"%@ videos or files without room have them in a file beside them, which the camera does not read." = "%@ video's of bestanden zonder ruimte hebben ze in een bestand ernaast, dat leest de camera niet.";
 "%@ were already there" = "%@ stonden er al";
 "%@ you left out on the card are still here (%@)" = "%@ die je op de kaart oversloeg staan hier nog (%@)";
 "%@ you left out on the card are still here (%lld)" = "%@ die je op de kaart oversloeg staan hier nog (%lld)";
@@ -144,6 +145,7 @@
 "%lld of them are used in DaVinci Resolve and stay. The rest goes to the Trash, so you can still put it back." = "%lld daarvan worden in DaVinci Resolve gebruikt en blijven staan. De rest gaat naar de prullenbak, dus je kunt het nog terugzetten.";
 "%lld or more" = "%lld of meer";
 "%lld unused" = "%lld ongebruikt";
+"%lld videos or files without room have them in a file beside them, which the camera does not read." = "%lld video's of bestanden zonder ruimte hebben ze in een bestand ernaast, dat leest de camera niet.";
 "%lld were already there" = "%lld stonden er al";
 "%lld you left out on the card are still here (%@)" = "%lld die je op de kaart oversloeg staan hier nog (%@)";
 "%lld you left out on the card are still here (%lld)" = "%lld die je op de kaart oversloeg staan hier nog (%lld)";
@@ -355,10 +357,12 @@
 "Go to the next one after Keep or Leave out" = "Ga naar de volgende na Behouden of Overslaan";
 "ISO %@" = "ISO %@";
 "ISO %lld" = "ISO %lld";
+"If the camera does not show them, choose Recover Image DB in its menu." = "Toont de camera ze niet, kies dan Recover Image DB (Beeld-DB herstellen) in het menu van de camera.";
 "If you quit now, the files that were not finished are left out. Rushes picks them up again next time the card is in." = "Als je nu stopt, blijven de onafgemaakte bestanden achter. Rushes pakt ze de volgende keer op als de kaart erin zit.";
 "Imports" = "Imports";
 "In a project" = "In een project";
 "In all projects" = "In alle projecten";
+"In each photo, as the camera rates" = "In elke foto, zoals de camera beoordeelt";
 "In the media pool of %@ project(s), on no timeline" = "In de media pool van %@ project(en), op geen enkele timeline";
 "In the media pool of %lld project(s), on no timeline" = "In de media pool van %lld project(en), op geen enkele timeline";
 "In the media pool, on no timeline" = "In de media pool, op geen timeline";
@@ -442,7 +446,6 @@
 "New footage" = "Nieuw beeld";
 "Next one not judged" = "Volgende die nog niet is beoordeeld";
 "Next to each file, as a green label" = "Naast elk bestand, als groen label";
-"Next to each file, as five stars" = "Naast elk bestand, als vijf sterren";
 "No DaVinci Resolve projects were found in the local database." = "In de lokale database zijn geen DaVinci Resolve-projecten gevonden.";
 "No card" = "Geen kaart";
 "No card folders yet" = "Nog geen kaartmappen";
@@ -527,7 +530,7 @@
 "Put new footage in a bin after every import" = "Zet nieuw beeld na elke import in een bin";
 "Put one in and Rushes shows what is new on it." = "Steek er een in en Rushes laat zien wat er nieuw op staat.";
 "Puts a green label next to what you kept, on the card" = "Zet een groen label naast wat je behoudt, op de kaart";
-"Puts five stars next to what you kept, on the card, for every app that filters on stars" = "Zet vijf sterren naast wat je behoudt, op de kaart, voor elke app die op sterren filtert";
+"Puts five stars in what you kept, on the card, the way the camera does, so the camera and Creators' App see them" = "Zet vijf sterren in wat je behoudt, op de kaart, zoals de camera dat doet, zodat de camera en Creators' App ze zien";
 "Python 3 (empty finds it by itself)" = "Python 3 (leeg zoekt zelf)";
 "Quit anyway" = "Toch stoppen";
 "RAW+JPG" = "RAW+JPG";
