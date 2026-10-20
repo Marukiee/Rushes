@@ -134,6 +134,9 @@ enum DebugSupport {
             guard let review, parts.count > 1 else { return }
             review.ratingFilter = parts[1] == "any" ? .any : (parts[1] == "unrated" ? .unrated : .atLeast(Int(parts[1]) ?? 1))
             review.refresh()
+        case "zoom":
+            // `zoom:<factor>` zooms the photo in view from its middle.
+            PhotoZoom.current?.zoom(by: CGFloat(Double(parts.last ?? "2") ?? 2))
         case "look":
             PlayerController.current?.toggleLook()
         case "pause":

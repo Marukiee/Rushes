@@ -204,6 +204,7 @@ struct KeyHints: View {
                     hint("U", "Clear the choice, keep the stars")
                     hint("M", "Sound on or off")
                     hint("C", "LUT on or off")
+                    hint("=  -  \u{2318}0", "Zoom in or out")
                     hint("I", "Details on or off")
                     hint("⇧ click, ⌘ click", "Select several")
                     hint("Click a day", "Select the whole day")

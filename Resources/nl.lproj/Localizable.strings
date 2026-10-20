@@ -314,6 +314,7 @@
 "Files checked" = "Bestanden gecontroleerd";
 "Filter" = "Filter";
 "Finder" = "Finder";
+"Fit the photo (⌘0)" = "Hele foto (⌘0)";
 "Five seconds back or forward" = "Vijf seconden terug of vooruit";
 "Folder" = "Map";
 "Folder on that disk" = "Map op die schijf";
@@ -668,6 +669,7 @@
 "You have version %@" = "Je hebt versie %@";
 "You have version %lld" = "Je hebt versie %lld";
 "Your disk is not connected" = "Je schijf is niet verbonden";
+"Zoom in or out" = "In- of uitzoomen";
 "about %@ min left" = "nog ongeveer %@ min";
 "about %lld min left" = "nog ongeveer %lld min";
 "and %@ more" = "en nog %@";

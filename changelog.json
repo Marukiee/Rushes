@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.2.3",
+    "date": "2026-10-20",
+    "highlight": false,
+    "en": {
+      "title": "Zoom into photos",
+      "new": [
+        "Zoom into a photo: pinch, scroll, double click, or = and -, and drag to look around",
+        "Kept or left out and the stars show in the corner of the picture"
+      ]
+    },
+    "nl": {
+      "title": "Inzoomen op foto's",
+      "new": [
+        "Zoom in op een foto: knijpen, scrollen, dubbelklikken of = en -, en sleep om rond te kijken",
+        "Behouden of overgeslagen en de sterren staan in de hoek van het beeld"
+      ]
+    }
+  },
+  {
     "version": "0.2.2",
     "date": "2026-10-20",
     "highlight": false,

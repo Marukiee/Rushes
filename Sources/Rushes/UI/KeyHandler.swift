@@ -7,6 +7,7 @@ import SwiftUI
 struct KeyHandler: NSViewRepresentable {
     var model: ReviewModel
     var player: PlayerController
+    var zoom: PhotoZoom
     let perform: (Verdict) -> Void
 
     func makeNSView(context: Context) -> NSView {
@@ -18,6 +19,7 @@ struct KeyHandler: NSViewRepresentable {
     func updateNSView(_ view: NSView, context: Context) {
         context.coordinator.model = model
         context.coordinator.player = player
+        context.coordinator.zoom = zoom
         context.coordinator.perform = perform
     }
 
@@ -27,6 +29,7 @@ struct KeyHandler: NSViewRepresentable {
         let coordinator = Coordinator()
         coordinator.model = model
         coordinator.player = player
+        coordinator.zoom = zoom
         coordinator.perform = perform
         return coordinator
     }
@@ -35,6 +38,7 @@ struct KeyHandler: NSViewRepresentable {
     final class Coordinator {
         var model: ReviewModel!
         var player: PlayerController!
+        var zoom: PhotoZoom!
         var perform: ((Verdict) -> Void)!
         let toggleDetails: () -> Void = { Prefs.defaults.set(!Prefs.bool(PrefKey.showInspector), forKey: PrefKey.showInspector) }
         private var monitor: Any?
@@ -58,6 +62,15 @@ struct KeyHandler: NSViewRepresentable {
             let flags = event.modifierFlags.intersection([.command, .option, .control, .shift])
             let key = event.charactersIgnoringModifiers?.lowercased() ?? ""
 
+            // Zooming a photo, with and without Command, like in Preview.
+            if model.focusItem?.kind == .photo, !flags.contains(.option), !flags.contains(.control) {
+                switch key {
+                case "=", "+": withAnimation(.rushes) { zoom.zoom(by: 1.5) }; return true
+                case "-": withAnimation(.rushes) { zoom.zoom(by: 1 / 1.5) }; return true
+                case "0" where flags.contains(.command): withAnimation(.rushes) { zoom.reset() }; return true
+                default: break
+                }
+            }
             if flags.contains(.command) {
                 switch key {
                 case "z": model.undo(); return true

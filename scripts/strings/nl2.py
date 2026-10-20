@@ -1,4 +1,6 @@
 T = {
+"Fit the photo (⌘0)": "Hele foto (⌘0)",
+"Zoom in or out": "In- of uitzoomen",
 "Project": "Project",
 "Pool": "Pool",
 "Maybe": "Misschien",

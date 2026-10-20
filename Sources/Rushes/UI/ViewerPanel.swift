@@ -9,6 +9,9 @@ struct ViewerPanel: View {
 
     @LocalState private var player = PlayerController()
     @LocalState private var photo: CGImage?
+    @LocalState private var zoom = PhotoZoom()
+    /// The whole photo, loaded the first time it is zoomed into.
+    @LocalState private var fullPhoto: CGImage?
     @LocalState private var flash: Verdict?
     @AppStorage(PrefKey.showInspector) private var showDetails = true
 
@@ -38,6 +41,7 @@ struct ViewerPanel: View {
                         .frame(width: width, height: height)
                         // Over the frame, not in it: a bar wider than a narrow picture would otherwise push what floats off the edge.
                         .overlay(alignment: .topTrailing) { if let item = model.focusItem { topBar(item) } }
+                    .overlay(alignment: .topLeading) { if let item = model.focusItem { judgement(item) } }
                         .overlay(alignment: .bottom) {
                             if model.focusItem?.kind == .video { TransportBar(player: player, lutName: player.lutName).padding(12) }
                         }
@@ -69,7 +73,14 @@ struct ViewerPanel: View {
         }
         .task(id: model.focusID) { await load() }
         .onDisappear { player.unload() }
-        .background(KeyHandler(model: model, player: player, perform: { perform($0) }))
+        .background(KeyHandler(model: model, player: player, zoom: zoom, perform: { perform($0) }))
+        .onChange(of: zoom.isZoomed) { _, zoomed in
+            guard zoomed, fullPhoto == nil, let item = model.focusItem, item.kind == .photo else { return }
+            Task {
+                let full = await FullPhoto.load(item, root: model.root)
+                if model.focusID == item.id { fullPhoto = full }
+            }
+        }
     }
 
     /// A verdict from a button or a key: the sign pops up over the picture, then the next one is chosen. A click on the button
@@ -118,8 +129,8 @@ struct ViewerPanel: View {
                         Text(failed).font(.callout).foregroundStyle(.white.opacity(0.7)).padding()
                     }
                 case .photo:
-                    if let photo {
-                        Image(decorative: photo, scale: 1).resizable().aspectRatio(contentMode: .fit)
+                    if let shown = fullPhoto ?? photo {
+                        ZoomablePhoto(image: shown, zoom: zoom)
                     } else {
                         PillSpinner(size: 26, tint: .white.opacity(0.6))
                     }
@@ -146,6 +157,49 @@ struct ViewerPanel: View {
 
     /// What stands over the picture: what the app suggests and whether a project uses the clip. The name and the details of the file are
     /// not drawn over the picture (they covered it), they stand at the top of the card under it.
+    /// What has been decided about the picture in view, in its corner: keep or leave out, and the stars, so a second look
+    /// shows it without looking down at the buttons.
+    @ViewBuilder
+    private func judgement(_ item: MediaItem) -> some View {
+        let verdict = model.verdict(of: item)
+        let stars = model.ratings[item.id] ?? 0
+        if verdict != .undecided || stars > 0 {
+            HStack(spacing: 8) {
+                if verdict != .undecided {
+                    HStack(spacing: 5) {
+                        Image(systemName: VerdictStyle.symbol(verdict, mode: model.mode))
+                            .font(.system(size: 10, weight: .heavy))
+                            .foregroundStyle(.white)
+                            .frame(width: 20, height: 20)
+                            .background(VerdictStyle.color(verdict).gradient, in: .circle)
+                        Text(verdictText(verdict)).font(.caption.weight(.semibold)).foregroundStyle(.white)
+                    }
+                }
+                if stars > 0 {
+                    Text(String(repeating: "\u{2605}", count: stars))
+                        .font(.system(size: 12))
+                        .foregroundStyle(VerdictStyle.hint)
+                }
+            }
+            .padding(.leading, verdict != .undecided ? 5 : 10)
+            .padding(.trailing, 10)
+            .padding(.vertical, 5)
+            .rushesVideoGlass(.capsule)
+            .padding(12)
+            .transition(.scale(scale: 0.8).combined(with: .opacity))
+            .animation(.rushesBouncy, value: verdict)
+            .animation(.rushesBouncy, value: stars)
+        }
+    }
+
+    private func verdictText(_ verdict: Verdict) -> LocalizedStringKey {
+        switch verdict {
+        case .keep: model.mode == .library ? "Protected" : "Kept"
+        case .skip: "Left out"
+        case .undecided: ""
+        }
+    }
+
     private func topBar(_ item: MediaItem) -> some View {
         VStack(alignment: .trailing, spacing: 6) {
             if let suggestion = model.suggestions[item.id] {
@@ -193,6 +247,8 @@ struct ViewerPanel: View {
         case .photo:
             player.unload()
             photo = nil
+            fullPhoto = nil
+            zoom.reset()
             photo = await Thumbnailer.shared.image(for: item, root: model.root, maxPixel: 2400)
         case .audio:
             player.unload()
