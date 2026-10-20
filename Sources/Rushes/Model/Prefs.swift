@@ -48,6 +48,8 @@ enum PrefKey {
     static let advanceAfterVerdict = "advanceAfterVerdict"
     static let useProxies = "useProxies"
     static let lutMode = "lutMode"
+    /// What the main button of a card does with what was chosen: copy it, or mark it on the card (stars or flag).
+    static let chosenAction = "chosenAction"
     static let lookOn = "lookOn"
     static let finderTags = "finderTags"
     static let suggestionsEnabled = "suggestionsEnabled"

@@ -269,6 +269,32 @@ enum MiscTests {
         expect(!volume(builtIn: true, removable: false).looksLikeCard, "a fixed internal disk is never a card")
     }
 
+    static func marksGoInASidecarAndNeverIntoTheFile() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("rushes-marks-\(UUID().uuidString)", isDirectory: true)
+        let folder = root.appendingPathComponent("DCIM/100MSDCF", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let original = Data("not really a raw file".utf8)
+        try original.write(to: folder.appendingPathComponent("DSC0001.ARW"))
+        let item = FolderScanner.scan(root: root).items[0]
+
+        expect(CardMarker.existing(item, root: root).rating == nil)
+        expect(try CardMarker.write(.stars, to: item, root: root))
+        expect(CardMarker.existing(item, root: root).rating == 5, "five stars in the sidecar")
+        expect(try !CardMarker.write(.stars, to: item, root: root), "nothing to do the second time")
+        expect(try CardMarker.write(.flag, to: item, root: root))
+        let after = CardMarker.existing(item, root: root)
+        expect(after.rating == 5 && after.label == CardMarker.label, "the label joins the stars")
+        expect((try? Data(contentsOf: folder.appendingPathComponent("DSC0001.ARW"))) == original, "the original is untouched")
+
+        // A sidecar written by another app, with the rating as an element, is updated in place.
+        let other = "<x:xmpmeta><rdf:RDF><rdf:Description rdf:about=\"\" xmlns:xmp=\"http://ns.adobe.com/xap/1.0/\"><xmp:Rating>3</xmp:Rating></rdf:Description></rdf:RDF></x:xmpmeta>"
+        try Data(other.utf8).write(to: CardMarker.sidecarURL(for: item, root: root))
+        expect(CardMarker.existing(item, root: root).rating == 3)
+        try CardMarker.write(.stars, to: item, root: root)
+        expect(CardMarker.existing(item, root: root).rating == 5)
+    }
+
     static func cardNames() {
         expect(CardNaming.nextNumber(ledgerHighest: 2, existingFolders: ["SD 3 Zweden", "SD 4", "Backups"]) == 5)
         expect(CardNaming.folderName(number: 5, name: "Zweden: dag/1") == "SD 5 Zweden dag 1")

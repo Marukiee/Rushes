@@ -5,11 +5,14 @@
 "%@ (%@ free)" = "%@ (%@ vrij)";
 "%@ (%lld free)" = "%@ (%lld vrij)";
 "%@ (not connected)" = "%@ (niet verbonden)";
+"%@ already have another label" = "%@ hebben al een ander label";
+"%@ already have stars" = "%@ hebben al sterren";
 "%@ already on your disk" = "%@ staan al op je schijf";
 "%@ and %@ are in" = "%@ en %@ zitten erin";
 "%@ and %lld are in" = "%@ en %lld zitten erin";
 "%@ and your disk" = "%@ en je schijf";
 "%@ and your disk are in" = "%@ en je schijf zitten erin";
+"%@ are now flagged on the card." = "%@ zijn nu gemarkeerd op de kaart.";
 "%@ can be freed" = "%@ kan vrij";
 "%@ can be freed here: %@" = "%@ kan hier vrij: %@";
 "%@ can be freed here: %lld" = "%@ kan hier vrij: %lld";
@@ -40,6 +43,7 @@
 "%@ is in with %lld new clips and photos." = "%@ zit erin met %lld nieuwe clips en foto's.";
 "%@ is on your disk" = "%@ staat op je schijf";
 "%@ is safe to remove" = "%@ kan veilig worden verwijderd";
+"%@ kept their own stars." = "%@ hielden hun eigen sterren.";
 "%@ left out" = "%@ overgeslagen";
 "%@ left out (%@)" = "%@ overgeslagen (%@)";
 "%@ left out (%lld)" = "%@ overgeslagen (%lld)";
@@ -50,6 +54,7 @@
 "%@ new, %@" = "%@ nieuw, %@";
 "%@ new, %lld" = "%@ nieuw, %lld";
 "%@ not judged stay on the card" = "%@ niet beoordeeld blijven op de kaart";
+"%@ now have five stars on the card." = "%@ hebben nu vijf sterren op de kaart.";
 "%@ of %@" = "%@ van %@";
 "%@ of %@ checked" = "%@ van %@ gecontroleerd";
 "%@ of %@ copied" = "%@ van %@ gekopieerd";
@@ -76,11 +81,14 @@
 "%lld (%@ free)" = "%lld (%@ vrij)";
 "%lld (%lld free)" = "%lld (%lld vrij)";
 "%lld (not connected)" = "%lld (niet verbonden)";
+"%lld already have another label" = "%lld hebben al een ander label";
+"%lld already have stars" = "%lld hebben al sterren";
 "%lld already on your disk" = "%lld staan al op je schijf";
 "%lld and %@ are in" = "%lld en %@ zitten erin";
 "%lld and %lld are in" = "%lld en %lld zitten erin";
 "%lld and your disk" = "%lld en je schijf";
 "%lld and your disk are in" = "%lld en je schijf zitten erin";
+"%lld are now flagged on the card." = "%lld zijn nu gemarkeerd op de kaart.";
 "%lld can be freed" = "%lld kan vrij";
 "%lld can be freed here: %@" = "%lld kan hier vrij: %@";
 "%lld can be freed here: %lld" = "%lld kan hier vrij: %lld";
@@ -111,6 +119,7 @@
 "%lld is in with %lld new clips and photos." = "%lld zit erin met %lld nieuwe clips en foto's.";
 "%lld is on your disk" = "%lld staat op je schijf";
 "%lld is safe to remove" = "%lld kan veilig worden verwijderd";
+"%lld kept their own stars." = "%lld hielden hun eigen sterren.";
 "%lld left out" = "%lld overgeslagen";
 "%lld left out (%@)" = "%lld overgeslagen (%@)";
 "%lld left out (%lld)" = "%lld overgeslagen (%lld)";
@@ -121,6 +130,7 @@
 "%lld new, %@" = "%lld nieuw, %@";
 "%lld new, %lld" = "%lld nieuw, %lld";
 "%lld not judged stay on the card" = "%lld niet beoordeeld blijven op de kaart";
+"%lld now have five stars on the card." = "%lld hebben nu vijf sterren op de kaart.";
 "%lld of %@" = "%lld van %@";
 "%lld of %@ checked" = "%lld van %@ gecontroleerd";
 "%lld of %@ copied" = "%lld van %@ gekopieerd";
@@ -166,8 +176,8 @@
 "All of it is already on %lld" = "Alles staat al op %lld";
 "Already on the disk" = "Al op de schijf";
 "Also copy everything to a second disk" = "Kopieer alles ook naar een tweede schijf";
-"Also copy what I have not judged" = "Kopieer ook wat ik niet heb beoordeeld";
 "Also make a timeline of the video clips, in shooting order" = "Maak ook een timeline van de videoclips, in opnamevolgorde";
+"Also what I have not judged" = "Ook wat ik niet heb beoordeeld";
 "Another import is still running" = "Er loopt nog een andere import";
 "Any rating" = "Elke beoordeling";
 "As shot" = "Zoals opgenomen";
@@ -179,6 +189,7 @@
 "Bins, importing and renaming need Resolve Studio to be open, with Preferences, General, External scripting using set to Local." = "Voor bins, importeren en hernoemen moet Resolve Studio openstaan, met bij Voorkeuren, Algemeen, Externe scripting ingesteld op Lokaal.";
 "Black or covered" = "Zwart of afgedekt";
 "Black or covered clips and near copies in a burst are always looked for. Nothing is left out without you pressing the button." = "Zwarte of afgedekte clips en bijna-dubbele foto's in een serie worden altijd gezocht. Er wordt niets overgeslagen zonder dat jij op de knop drukt.";
+"Both" = "Allebei";
 "Both copies are checked against the card. If the second disk is not connected, the copy goes to the first one only and says so." = "Beide kopieën worden met de kaart vergeleken. Is de tweede schijf niet verbonden, dan gaat de kopie alleen naar de eerste en dat wordt gemeld.";
 "Cache" = "Cache";
 "Camera" = "Camera";
@@ -258,6 +269,7 @@
 "Copy these %@" = "Kopieer deze %@";
 "Copy these %lld" = "Kopieer deze %lld";
 "Copy this one" = "Kopieer deze";
+"Copy to the disk" = "Kopiëren naar de schijf";
 "Copy what I kept of this day (%@, %@)" = "Kopieer wat ik behield van deze dag (%@, %@)";
 "Copy what I kept of this day (%@, %lld)" = "Kopieer wat ik behield van deze dag (%@, %lld)";
 "Copy what I kept of this day (%lld, %@)" = "Kopieer wat ik behield van deze dag (%lld, %@)";
@@ -316,6 +328,13 @@
 "Finder" = "Finder";
 "Fit the photo (⌘0)" = "Hele foto (⌘0)";
 "Five seconds back or forward" = "Vijf seconden terug of vooruit";
+"Five stars for %@" = "Vijf sterren voor %@";
+"Five stars for %lld" = "Vijf sterren voor %lld";
+"Flag" = "Markeren";
+"Flag %@" = "Markeer %@";
+"Flag %lld" = "Markeer %lld";
+"Flag on the card" = "Markeren op de kaart";
+"Flag them anyway" = "Toch markeren";
 "Folder" = "Map";
 "Folder on that disk" = "Map op die schijf";
 "Folder on the disk (empty is the top)" = "Map op de schijf (leeg is de bovenste)";
@@ -329,6 +348,8 @@
 "Give %@ a name, like Sweden (optional)" = "Geef %@ een naam, zoals Zweden (optioneel)";
 "Give %lld a name, like Sweden (optional)" = "Geef %lld een naam, zoals Zweden (optioneel)";
 "Give a notification when it is done" = "Geef een melding als het klaar is";
+"Give five stars on the card" = "Vijf sterren geven op de kaart";
+"Give them five stars" = "Geef ze vijf sterren";
 "Go to the next one after Keep or Leave out" = "Ga naar de volgende na Behouden of Overslaan";
 "ISO %@" = "ISO %@";
 "ISO %lld" = "ISO %lld";
@@ -367,6 +388,8 @@
 "Leave out" = "Overslaan";
 "Leave out all of this day" = "Sla alles van deze dag over";
 "Leave out all suggestions" = "Sla alle suggesties over";
+"Leave their labels as they are" = "Laat hun labels staan";
+"Leave their stars as they are" = "Laat hun sterren staan";
 "Leave them out" = "Sla ze over";
 "Left out" = "Overgeslagen";
 "Left out %@" = "%@ overgeslagen";
@@ -396,7 +419,6 @@
 "Month" = "Maand";
 "More" = "Meer";
 "More folders to look through" = "Meer mappen om doorheen te kijken";
-"More ways to copy" = "Meer manieren om te kopiëren";
 "Move %@ (%@) to the Trash" = "Verplaats %@ (%@) naar de prullenbak";
 "Move %@ (%lld) to the Trash" = "Verplaats %@ (%lld) naar de prullenbak";
 "Move %@ clips (%@) to the Trash" = "Verplaats %@ clips (%@) naar de prullenbak";
@@ -417,6 +439,8 @@
 "Nederlands" = "Nederlands";
 "New footage" = "Nieuw beeld";
 "Next one not judged" = "Volgende die nog niet is beoordeeld";
+"Next to each file, as a green label" = "Naast elk bestand, als groen label";
+"Next to each file, as five stars" = "Naast elk bestand, als vijf sterren";
 "No DaVinci Resolve projects were found in the local database." = "In de lokale database zijn geen DaVinci Resolve-projecten gevonden.";
 "No card" = "Geen kaart";
 "No card folders yet" = "Nog geen kaartmappen";
@@ -430,6 +454,8 @@
 "Not connected" = "Niet verbonden";
 "Not enough room on %@" = "Niet genoeg ruimte op %@";
 "Not enough room on %lld" = "Niet genoeg ruimte op %lld";
+"Not everything could be marked. Is the card locked? %@" = "Niet alles kon worden gemarkeerd. Zit de kaart op slot? %@";
+"Not everything could be marked. Is the card locked? %lld" = "Niet alles kon worden gemarkeerd. Zit de kaart op slot? %lld";
 "Not in any DaVinci Resolve project" = "In geen enkel DaVinci Resolve-project";
 "Not judged yet" = "Nog niet beoordeeld";
 "Not now" = "Nu niet";
@@ -455,6 +481,7 @@
 "Off: only what you marked Keep is copied. What you did not judge stays on the card for next time." = "Uit: alleen wat je als Behouden markeerde wordt gekopieerd. Wat je niet beoordeelde blijft op de kaart voor de volgende keer.";
 "On an exFAT disk every tag adds a small hidden file next to the original." = "Op een exFAT-schijf zet elke tag een klein verborgen bestand naast het origineel.";
 "On disk" = "Op schijf";
+"On the card, nothing is copied" = "Op de kaart, er wordt niets gekopieerd";
 "One frame back or forward" = "Eén beeld terug of vooruit";
 "Only ask me" = "Vraag het me alleen";
 "Only clips that are in no DaVinci Resolve project, and that you did not protect. They go to the Trash, so you can still put them back." = "Alleen clips die in geen enkel DaVinci Resolve-project staan en die je niet hebt beschermd. Ze gaan naar de prullenbak, dus je kunt ze nog terugzetten.";
@@ -495,6 +522,8 @@
 "Put new footage in a bin after each import" = "Zet nieuw beeld na elke import in een bin";
 "Put new footage in a bin after every import" = "Zet nieuw beeld na elke import in een bin";
 "Put one in and Rushes shows what is new on it." = "Steek er een in en Rushes laat zien wat er nieuw op staat.";
+"Puts a green label next to what you kept, on the card" = "Zet een groen label naast wat je behoudt, op de kaart";
+"Puts five stars next to what you kept, on the card, for every app that filters on stars" = "Zet vijf sterren naast wat je behoudt, op de kaart, voor elke app die op sterren filtert";
 "Python 3 (empty finds it by itself)" = "Python 3 (leeg zoekt zelf)";
 "Quit anyway" = "Toch stoppen";
 "RAW+JPG" = "RAW+JPG";
@@ -575,6 +604,7 @@
 "Show what was copied or left out before" = "Laat zien wat eerder is gekopieerd of overgeslagen";
 "Size" = "Grootte";
 "Some files did not arrive intact." = "Sommige bestanden zijn niet heel aangekomen.";
+"Some of what you chose was marked before, on the camera or in another app." = "Een deel van wat je koos was al gemarkeerd, op de camera of in een andere app.";
 "Some projects could not be read." = "Sommige projecten konden niet worden gelezen.";
 "Sound off (M)" = "Geluid uit (M)";
 "Sound on" = "Geluid aan";
@@ -655,10 +685,13 @@
 "Version %lld is available" = "Versie %lld is beschikbaar";
 "Very short" = "Heel kort";
 "Video" = "Video";
+"Videos" = "Video's";
 "Videos and photos" = "Video's en foto's";
 "Waiting for a card" = "Wachten op een kaart";
-"What a copy takes along" = "Wat een kopie meeneemt";
 "What gets copied" = "Wat er wordt gekopieerd";
+"What goes along" = "Wat gaat mee";
+"What goes along: videos, photos or both" = "Wat gaat mee: video's, foto's of allebei";
+"What happens with what you chose" = "Wat er gebeurt met wat je koos";
 "What you chose is already on %@" = "Wat je koos staat al op %@";
 "What you chose is already on %lld" = "Wat je koos staat al op %lld";
 "What you left out stays on the card and is not offered again. The card can be taken out." = "Wat je oversloeg blijft op de kaart en wordt niet opnieuw aangeboden. De kaart kan eruit.";

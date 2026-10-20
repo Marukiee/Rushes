@@ -25,6 +25,8 @@ scripts                bouwen, tekenen, releasen, teksten
 ## Ontwerpbesluiten die niet opnieuw ter discussie staan
 
 - **De kaart wordt alleen gelezen.** Niets op de kaart wordt veranderd of gewist. Wissen na controle staat op de roadmap, niet erin.
+  Eén uitzondering, als de gebruiker erom vraagt: sterren of een label op de kaart zetten (`CardMarker`). Dat gaat in een XMP-sidecar
+  naast het bestand (`DSC0001.xmp`), nooit in het origineel, want naam, grootte en tijd zijn hoe Rushes een bestand herkent.
 - **Elk bestand wordt gecontroleerd.** SHA-256 tijdens het lezen, schrijven onder `.rushes-part`, hernoemen, terugleze van de schijf zelf
   (`F_NOCACHE`) en vergelijken. Een kopie telt pas als ze klopt.
 - **Bestanden worden herkend op naam, grootte en tijd**, niet op naam alleen. Een kaart die is geformatteerd begint bij C0001

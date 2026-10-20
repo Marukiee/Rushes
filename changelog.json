@@ -1,5 +1,30 @@
 [
   {
+    "version": "0.2.4",
+    "date": "2026-10-20",
+    "highlight": false,
+    "en": {
+      "title": "Stars on the card",
+      "new": [
+        "Instead of copying, give what you kept five stars or a flag on the card, to pick them out elsewhere",
+        "Rushes asks before it replaces stars that were already there"
+      ],
+      "better": [
+        "The bar at the bottom shows videos, photos or both at a glance"
+      ]
+    },
+    "nl": {
+      "title": "Sterren op de kaart",
+      "new": [
+        "Geef wat je behoudt vijf sterren of een markering op de kaart in plaats van te kopiëren, om ze ergens anders terug te vinden",
+        "Rushes vraagt eerst voordat bestaande sterren worden vervangen"
+      ],
+      "better": [
+        "De balk onderin toont video's, foto's of allebei in één oogopslag"
+      ]
+    }
+  },
+  {
     "version": "0.2.3",
     "date": "2026-10-20",
     "highlight": false,

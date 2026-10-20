@@ -153,6 +153,19 @@ final class ReviewModel {
     func isOnDisk(_ item: MediaItem) -> Bool { mode == .card && status(of: item) == .imported }
 
     /// What a copy would take now: what is chosen (or everything) of the right kind that is not on the disk yet.
+    /// What has been chosen, to mark on the card instead of copying: kept, and not judged when that counts as kept. Also what
+    /// is on the disk already, since a mark is about the card and not about the copy.
+    func chosenItems(kinds: CopyKinds, undecidedMeansKeep: Bool) -> [MediaItem] {
+        allItems.filter { item in
+            guard isActionable(item) || status(of: item) == .imported, kinds.includes(item.kind) else { return false }
+            switch verdict(of: item) {
+            case .keep: return true
+            case .skip: return false
+            case .undecided: return undecidedMeansKeep && status(of: item) != .skippedBefore
+            }
+        }
+    }
+
     func toCopy(kinds: CopyKinds, undecidedMeansKeep: Bool, everything: Bool = false, only: Set<String>? = nil) -> (count: Int, bytes: UInt64) {
         var count = 0
         var bytes: UInt64 = 0
