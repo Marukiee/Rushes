@@ -42,6 +42,7 @@ final class AppModel {
     static let shared = AppModel()
 
     let dataDirectory: URL
+    private var lastVolumeLog = ""
     let ledger: Ledger
     let library = LibraryModel()
     let resolve: ResolveModel
@@ -159,6 +160,17 @@ final class AppModel {
         watcher.onChange = { [weak self] in self?.refreshVolumes() }
         watcher.start()
         refreshVolumes()
+        // A card that is in before Rushes starts can be unreadable for a moment: still being mounted, or waiting on the system's
+        // question about removable volumes. So it is looked for again, a few times after the start and whenever the window comes up.
+        Task { [weak self] in
+            for delay in [1.5, 4.0, 8.0, 15.0] {
+                try? await Task.sleep(for: .seconds(delay))
+                self?.refreshVolumes()
+            }
+        }
+        NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.refreshVolumes() }
+        }
         resolve.startWatching()
         if Prefs.bool(PrefKey.resolveEnabled), Prefs.bool(PrefKey.resolveAutoScan) {
             Task { await resolve.scan(); library.recount(index: resolve.index) }
@@ -189,6 +201,27 @@ final class AppModel {
                           isEjectable: removable, isInternal: false, isReadOnly: false, format: "exFAT")
     }
 
+    /// What was seen of each disk, in `volumes.log` next to the ledger, so a card that is not recognised can be explained.
+    private func logVolumes(_ volumes: [VolumeInfo], cards: [VolumeInfo]) {
+        let line = volumes.map { volume -> String in
+            var readable = "readable"
+            do { _ = try FileManager.default.contentsOfDirectory(atPath: volume.url.path) } catch { readable = "unreadable: \(error.localizedDescription)" }
+            let card = cards.contains { $0.id == volume.id } ? "card" : (volume.looksLikeCard ? "card, but the disk" : "no card")
+            return "\(volume.name) [\(volume.url.path)] removable=\(volume.isRemovable) ejectable=\(volume.isEjectable) internal=\(volume.isInternal) \(card), \(readable)"
+        }.joined(separator: " | ")
+        guard line != lastVolumeLog else { return }
+        lastVolumeLog = line
+        let url = dataDirectory.appendingPathComponent("volumes.log")
+        let entry = "\(Date().formatted(.iso8601)) \(line)\n"
+        if let handle = try? FileHandle(forWritingTo: url) {
+            if (try? handle.seekToEnd()) ?? 0 > 200_000 { try? handle.truncate(atOffset: 0) }
+            try? handle.write(contentsOf: Data(entry.utf8))
+            try? handle.close()
+        } else {
+            try? Data(entry.utf8).write(to: url)
+        }
+    }
+
     func refreshVolumes() {
         let current = mountedVolumes()
         volumes = current
@@ -198,7 +231,9 @@ final class AppModel {
         lastDestinationID = destination?.id
 
         let cards = current.filter { $0.looksLikeCard && $0.id != destination?.id && $0.id != backup?.id }
-        for session in sessions where !cards.contains(where: { $0.id == session.id }) && session.stage != .importing {
+        logVolumes(current, cards: cards)
+        // A card goes away when it is taken out, not when it could not be read for a moment.
+        for session in sessions where !current.contains(where: { $0.id == session.id }) && session.stage != .importing {
             sessions.removeAll { $0.id == session.id }
             announced.remove(session.id)
             if reviewSessionID == session.id { reviewSessionID = nil }

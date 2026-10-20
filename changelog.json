@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.2.8",
+    "date": "2026-10-20",
+    "highlight": false,
+    "en": {
+      "title": "Card already in",
+      "fixed": [
+        "A card that is already in when Rushes starts is found without taking it out"
+      ]
+    },
+    "nl": {
+      "title": "Kaart zit er al in",
+      "fixed": [
+        "Een kaart die er al in zit als Rushes start, wordt gevonden zonder hem eruit te halen"
+      ]
+    }
+  },
+  {
     "version": "0.2.7",
     "date": "2026-10-20",
     "highlight": false,

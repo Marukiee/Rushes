@@ -4,12 +4,9 @@ Wat er nog kan komen. Nieuwe wensen komen hier eerst.
 
 ## Gevraagd, nog niet gebouwd
 
-- **De gewone Rushes ziet de SD niet, Rushes Dev wel** (gemeld 2026-10-14, uitzoeken met een SD in de Mac). Vermoedens, in deze
-  volgorde: de gewone app is 0.1.1 uit `~/Downloads`, en de kaartsleuf van de Mac wordt pas sinds 0.1.2 herkend. Hij staat daar met
-  quarantaine, dus macOS start hem verplaatst (App Translocation) en de updater kan hem misschien niet vervangen: 0.1.3 werd wel
-  gemeld maar niet geïnstalleerd. Of de toestemming voor verwisselbare schijven is voor `nl.markmaaktmedia.Rushes` niet gegeven.
-  Eerst naar `/Applications` zetten en bijwerken, dan opnieuw proberen.
-
+- **Een kaart die al in de Mac zit bij het starten wordt soms niet gezien** (gemeld 2026-10-20). Rushes kijkt nu na de start nog een
+  paar keer en bij elke keer dat het venster voorkomt, en schrijft in `volumes.log` (naast de ledger) wat het per schijf zag. Komt
+  het nog voor: dat logboek lezen.
 - Kaart wissen na een geslaagde controle (optie in de instellingen, standaard uit).
 - Melding op de telefoon via Tandem als een import klaar is of de schijf vol raakt.
 
