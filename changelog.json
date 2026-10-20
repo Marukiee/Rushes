@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.2.2",
+    "date": "2026-10-20",
+    "highlight": false,
+    "en": {
+      "title": "Standing photos big",
+      "better": [
+        "A standing photo uses nearly the full height, with the details beside it",
+        "The details come before Up next"
+      ]
+    },
+    "nl": {
+      "title": "Staande foto's groot",
+      "better": [
+        "Een staande foto gebruikt bijna de hele hoogte, met de details ernaast",
+        "De details gaan voor Hierna"
+      ]
+    }
+  },
+  {
     "version": "0.2.1",
     "date": "2026-10-20",
     "highlight": false,

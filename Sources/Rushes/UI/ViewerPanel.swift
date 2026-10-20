@@ -16,29 +16,43 @@ struct ViewerPanel: View {
         GeometryReader { geometry in
             // The picture is as wide as the column and never taller than about two thirds of it, so a tall photo leaves room for
             // the buttons. The frame is exactly the shape of the picture: no bars, and the clip goes round that.
-            // The details and the look ahead are both wanted, so the picture gives up height for them before either goes away.
             let barReserve: CGFloat = 76
-            let detailsReserve: CGFloat = showDetails ? (model.mode == .library ? 240 : 176) : 0
             let upNextReserve: CGFloat = 104
-            // The picture comes first: it keeps at least half the height, and the look ahead goes before the picture gets small.
-            let tallest = min(geometry.size.height * 0.64, max(geometry.size.height * 0.5, geometry.size.height - barReserve - detailsReserve - upNextReserve))
-            let height = min(geometry.size.width / aspect, tallest)
+            let full = geometry.size.height
+            // A standing picture leaves room at its side, so the details go there and the picture can use nearly all the height.
+            let sideWidth: CGFloat = 260
+            let standing = aspect < 0.95
+            let sideTallest = min(full * 0.85, full - barReserve)
+            let sideHeight = min(sideTallest, max(0, geometry.size.width - sideWidth - Space.l) / aspect)
+            let sideBySide = showDetails && standing && model.focusItem != nil && sideHeight >= full * 0.45
+            let detailsReserve: CGFloat = showDetails && !sideBySide ? (model.mode == .library ? 240 : 176) : 0
+            // The picture comes first, then the details. The look ahead only gets what is left over, it never makes the picture smaller.
+            let cap = standing ? 0.85 : 0.7
+            let tallest = min(full * cap, max(full * 0.5, full - barReserve - detailsReserve))
+            let height = sideBySide ? sideHeight : min(geometry.size.width / aspect, tallest)
             let width = height * aspect
-            let showUpNext = geometry.size.height - height - barReserve - detailsReserve > upNextReserve - 12
+            let showUpNext = full - height - barReserve - detailsReserve > upNextReserve - 12
             VStack(spacing: Space.l) {
-                stage
-                    .frame(width: width, height: height)
-                    // Over the frame, not in it: a bar wider than a narrow picture would otherwise push what floats off the edge.
-                    .overlay(alignment: .topTrailing) { if let item = model.focusItem { topBar(item) } }
-                    .overlay(alignment: .bottom) {
-                        if model.focusItem?.kind == .video { TransportBar(player: player, lutName: player.lutName).padding(12) }
+                HStack(alignment: .top, spacing: Space.l) {
+                    stage
+                        .frame(width: width, height: height)
+                        // Over the frame, not in it: a bar wider than a narrow picture would otherwise push what floats off the edge.
+                        .overlay(alignment: .topTrailing) { if let item = model.focusItem { topBar(item) } }
+                        .overlay(alignment: .bottom) {
+                            if model.focusItem?.kind == .video { TransportBar(player: player, lutName: player.lutName).padding(12) }
+                        }
+                        // The picture is dark whatever the Mac is set to, so what floats over it is dark glass with white text.
+                        .environment(\.colorScheme, .dark)
+                        .clipShape(RoundedRectangle(cornerRadius: Metrics.card, style: .continuous))
+                        .frame(maxWidth: sideBySide ? nil : .infinity)
+                    if sideBySide, let item = model.focusItem {
+                        DetailsCard(model: model, item: item)
+                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                            .transition(.move(edge: .trailing).combined(with: .opacity))
                     }
-                    // The picture is dark whatever the Mac is set to, so what floats over it is dark glass with white text.
-                    .environment(\.colorScheme, .dark)
-                    .clipShape(RoundedRectangle(cornerRadius: Metrics.card, style: .continuous))
-                    .frame(maxWidth: .infinity)
+                }
                 VerdictBar(model: model, onKeep: { perform(.keep, fromButton: true) }, onSkip: { perform(.skip, fromButton: true) })
-                if showDetails, let item = model.focusItem {
+                if showDetails, !sideBySide, let item = model.focusItem {
                     DetailsCard(model: model, item: item)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
@@ -51,6 +65,7 @@ struct ViewerPanel: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .animation(.rushes, value: showDetails)
             .animation(.rushes, value: showUpNext)
+            .animation(.rushes, value: sideBySide)
         }
         .task(id: model.focusID) { await load() }
         .onDisappear { player.unload() }
