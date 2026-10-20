@@ -245,7 +245,7 @@ private struct DiskFooter: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Space.s) {
             HStack(spacing: Space.s) {
-                Image(systemName: "externaldrive.fill")
+                Image(systemName: app.copiesToMac ? "laptopcomputer" : "externaldrive.fill")
                     .font(.system(size: 15))
                     .foregroundStyle(app.destination == nil ? Color.secondary : Palette.accent)
                     .frame(width: 22)

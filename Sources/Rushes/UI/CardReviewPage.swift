@@ -199,6 +199,19 @@ private struct ImportBar: View {
                 Label("Flag on the card", systemImage: "flag.fill").tag(ChosenAction.flag.rawValue)
             }
             .pickerStyle(.inline)
+            if action == .copy {
+                Divider()
+                // Where it goes: one of the disks, or a folder on this Mac.
+                Picker("Where to", selection: Binding(get: { app.destination?.uuid ?? "" }, set: { uuid in
+                    if let disk = app.destinationCandidates.first(where: { $0.uuid == uuid }) { app.chooseDestination(disk) }
+                })) {
+                    ForEach(app.destinationCandidates) { disk in
+                        Label(disk.name, systemImage: disk.uuid == AppModel.macFolderID ? "laptopcomputer" : "externaldrive").tag(disk.uuid)
+                    }
+                }
+                .pickerStyle(.inline)
+                Button("A folder on this Mac...", systemImage: "folder.badge.plus") { app.chooseMacFolder() }
+            }
             Divider()
             Toggle("Also what I have not judged", isOn: $undecidedMeansKeep)
             if action == .copy {
@@ -218,7 +231,7 @@ private struct ImportBar: View {
         } label: {
             // Where it goes is part of the choice: copying names the disk, so the bar needs no line of its own for it.
             if action == .copy, withDisk, let destination = app.destination {
-                Label("To \(destination.name)", systemImage: "externaldrive")
+                Label("To \(destination.name)", systemImage: app.copiesToMac ? "laptopcomputer" : "externaldrive")
             } else {
                 Label(actionTitle(action), systemImage: actionSymbol(action))
             }

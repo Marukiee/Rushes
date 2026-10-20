@@ -233,7 +233,10 @@ private struct DiskSettings: View {
                         Text("\(disk.name)  ·  \(Format.bytes(disk.available)) free").tag(disk.uuid)
                     }
                 }
-                TextField("Folder on the disk (empty is the top)", text: $subfolder)
+                LabeledContent("Or a folder on this Mac") {
+                    Button(app.copiesToMac ? "Choose another folder..." : "Choose a folder...") { app.chooseMacFolder() }
+                }
+                if !app.copiesToMac { TextField("Folder on the disk (empty is the top)", text: $subfolder) }
             } header: {
                 Text("Where the cards go")
             } footer: {

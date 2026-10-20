@@ -113,7 +113,9 @@ for path in sources:
                 found.setdefault(text, f"{path.relative_to(root)}:{number}")
 
 # Texts that are part of the program and not shown as they are.
-IGNORED = {"CFBundleShortVersionString", "RushesUpdatePublicKey", "Accept", "Marukiee", "Rushes Dev", "NO NAME", "Debug SSD", "Copying a card", "S-Log3", "{datum} Selects", "SD 5"}
+IGNORED = {"CFBundleShortVersionString", "RushesUpdatePublicKey", "Accept", "Marukiee", "Rushes Dev", "NO NAME", "Debug SSD", "Copying a card", "S-Log3", "{datum} Selects", "SD 5",
+           # The lines of volumes.log, which are for reading back what happened and not shown in the app.
+           "%@ [%@] removable=%@ ejectable=%@ internal=%@ %@, %@", "card, but the disk", "no card", "unreadable: %@"}
 for ignored in IGNORED:
     found.pop(ignored, None)
 # Identifiers for notifications, keys of the choices table and file names have no spaces and a separator.

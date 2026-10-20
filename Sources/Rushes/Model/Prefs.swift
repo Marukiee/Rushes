@@ -33,6 +33,8 @@ enum PrefKey {
     static let destinationUUID = "destinationUUID"
     static let destinationName = "destinationName"
     static let destinationSubfolder = "destinationSubfolder"
+    /// A folder on the Mac itself, chosen instead of a disk.
+    static let destinationFolder = "destinationFolder"
     static let askForName = "askForName"
     static let backupEnabled = "backupEnabled"
     static let backupUUID = "backupUUID"

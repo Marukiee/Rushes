@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.2.9",
+    "date": "2026-10-20",
+    "highlight": false,
+    "en": {
+      "title": "Copy to your Mac",
+      "new": [
+        "Copy to a folder on your Mac instead of a disk, chosen in the copy menu or the settings"
+      ]
+    },
+    "nl": {
+      "title": "Kopiëren naar je Mac",
+      "new": [
+        "Kopieer naar een map op je Mac in plaats van een schijf, te kiezen in het kopieermenu of de instellingen"
+      ]
+    }
+  },
+  {
     "version": "0.2.8",
     "date": "2026-10-20",
     "highlight": false,

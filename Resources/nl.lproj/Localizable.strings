@@ -163,6 +163,7 @@
 "A card is put in" = "Er gaat een kaart in";
 "A card is still being copied" = "Er wordt nog een kaart gekopieerd";
 "A clip with this name is used elsewhere" = "Een clip met deze naam wordt ergens anders gebruikt";
+"A folder on this Mac..." = "Een map op deze Mac...";
 "A proxy plays smoothly even from a slow card. The original is what gets copied." = "Een proxy speelt soepel af, ook van een trage kaart. Wat wordt gekopieerd is het origineel.";
 "A standard S-Log3 look" = "Een standaard S-Log3-look";
 "About" = "Over";
@@ -215,6 +216,8 @@
 "Choose a clip" = "Kies een clip";
 "Choose a disk" = "Kies een schijf";
 "Choose a folder" = "Kies een map";
+"Choose a folder..." = "Kies een map...";
+"Choose another folder..." = "Kies een andere map...";
 "Clean up" = "Opruimen";
 "Clear" = "Wis";
 "Clear the choice, keep the stars" = "Keuze wissen, sterren houden";
@@ -264,6 +267,7 @@
 "Copy everything new, whatever I chose (%@, %lld)" = "Kopieer alles wat nieuw is, wat ik ook koos (%@, %lld)";
 "Copy everything new, whatever I chose (%lld, %@)" = "Kopieer alles wat nieuw is, wat ik ook koos (%lld, %@)";
 "Copy everything new, whatever I chose (%lld, %lld)" = "Kopieer alles wat nieuw is, wat ik ook koos (%lld, %lld)";
+"Copy here" = "Hierheen kopiëren";
 "Copy the %@ selected (%@)" = "Kopieer de %@ geselecteerde (%@)";
 "Copy the %@ selected (%lld)" = "Kopieer de %@ geselecteerde (%lld)";
 "Copy the %lld selected (%@)" = "Kopieer de %lld geselecteerde (%@)";
@@ -312,6 +316,7 @@
 "Downloading %lld%%" = "Downloaden %lld%%";
 "Downloading version %@" = "Versie %@ downloaden";
 "Downloading version %lld" = "Versie %lld downloaden";
+"Each card gets its own folder in it: SD 1, SD 2 and on." = "Elke kaart krijgt er een eigen map in: SD 1, SD 2 enzovoort.";
 "Each card gets its own folder there: SD 1, SD 2 and on. The same card goes back into its own folder." = "Elke kaart krijgt daar een eigen map: SD 1, SD 2 enzovoort. Dezelfde kaart gaat terug in zijn eigen map.";
 "Eject" = "Werp uit";
 "Eject card" = "Werp kaart uit";
@@ -501,6 +506,7 @@
 "Open project: %@" = "Geopend project: %@";
 "Open project: %lld" = "Geopend project: %lld";
 "Open the window when there is something to look through" = "Open het venster als er iets te bekijken is";
+"Or a folder on this Mac" = "Of een map op deze Mac";
 "Other" = "Overig";
 "Out of focus" = "Onscherp";
 "Overview" = "Overzicht";
@@ -660,6 +666,7 @@
 "There is nothing new to copy. The card can be taken out." = "Er is niets nieuws om te kopiëren. De kaart kan eruit.";
 "They go to the Trash, so you can still put them back. The card is not touched." = "Ze gaan naar de prullenbak, dus je kunt ze nog terugzetten. De kaart wordt niet aangeraakt.";
 "They may be protected. They go to the Trash and can be put back." = "Ze zijn misschien beschermd. Ze gaan naar de prullenbak en kunnen worden teruggezet.";
+"This Mac" = "Deze Mac";
 "This clip cannot be played" = "Deze clip kan niet worden afgespeeld";
 "This clip is used in DaVinci Resolve" = "Deze clip wordt gebruikt in DaVinci Resolve";
 "This day" = "Deze dag";
@@ -707,6 +714,7 @@
 "What's new" = "Wat is nieuw";
 "When a card and your disk are in" = "Als een kaart en je schijf erin zitten";
 "Where the cards go" = "Waar de kaarten heen gaan";
+"Where to" = "Waarheen";
 "You have the newest version" = "Je hebt de nieuwste versie";
 "You have version %@" = "Je hebt versie %@";
 "You have version %lld" = "Je hebt versie %lld";

@@ -1,4 +1,12 @@
 T = {
+"A folder on this Mac...": "Een map op deze Mac...",
+"Choose a folder...": "Kies een map...",
+"Choose another folder...": "Kies een andere map...",
+"Copy here": "Hierheen kopiëren",
+"Each card gets its own folder in it: SD 1, SD 2 and on.": "Elke kaart krijgt er een eigen map in: SD 1, SD 2 enzovoort.",
+"Or a folder on this Mac": "Of een map op deze Mac",
+"This Mac": "Deze Mac",
+"Where to": "Waarheen",
 "Fit the photo (Z)": "Hele foto (Z)",
 "Keep something first": "Behoud eerst iets",
 "No disk connected": "Geen schijf verbonden",

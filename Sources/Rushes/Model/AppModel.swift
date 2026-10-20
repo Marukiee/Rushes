@@ -191,8 +191,39 @@ final class AppModel {
         if let path = environment["RUSHES_DEBUG_DEST"], !path.isEmpty {
             found.append(Self.fake(path: path, name: "Debug SSD", uuid: "debug-dest", capacity: 4_000 << 30, removable: false))
         }
+        // A folder on the Mac stands next to the disks as a place to copy to, as long as it is there.
+        let folder = Prefs.string(PrefKey.destinationFolder)
+        if !folder.isEmpty, FileManager.default.fileExists(atPath: folder) {
+            let capacity = (try? URL(fileURLWithPath: folder).resourceValues(forKeys: [.volumeTotalCapacityKey]).volumeTotalCapacity).flatMap { $0 }.map(UInt64.init) ?? 0
+            let name = String(localized: "This Mac") + " · " + URL(fileURLWithPath: folder).lastPathComponent
+            found.append(Self.fake(path: folder, name: name, uuid: Self.macFolderID, capacity: capacity, removable: false))
+        }
         return found
     }
+
+    static let macFolderID = "mac-folder"
+
+    /// Copying goes to a folder on this Mac, not to a disk.
+    var copiesToMac: Bool { destination?.uuid == Self.macFolderID }
+
+    /// Asks for a folder on the Mac and makes it the place cards are copied to.
+    func chooseMacFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.canCreateDirectories = true
+        panel.prompt = String(localized: "Copy here")
+        panel.message = String(localized: "Each card gets its own folder in it: SD 1, SD 2 and on.")
+        if let pictures = FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask).first { panel.directoryURL = pictures }
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        Prefs.defaults.set(url.path, forKey: PrefKey.destinationFolder)
+        Prefs.defaults.set(Self.macFolderID, forKey: PrefKey.destinationUUID)
+        Prefs.defaults.set(String(localized: "This Mac") + " · " + url.lastPathComponent, forKey: PrefKey.destinationName)
+        refreshVolumes()
+    }
+
+    /// The folder under the destination where the cards go. A folder on the Mac is that place itself.
+    var destinationSubfolder: String { copiesToMac ? "" : Prefs.string(PrefKey.destinationSubfolder) }
 
     private static func fake(path: String, name: String, uuid: String, capacity: UInt64, removable: Bool) -> VolumeInfo {
         let url = URL(fileURLWithPath: path, isDirectory: true)
@@ -404,7 +435,7 @@ final class AppModel {
 
     func reloadLibrary() {
         library.reload(
-            destination: destination?.url, subfolder: Prefs.string(PrefKey.destinationSubfolder),
+            destination: destination?.url, subfolder: destinationSubfolder,
             extras: Prefs.extraFolders, index: resolve.index
         )
     }

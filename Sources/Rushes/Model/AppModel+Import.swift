@@ -91,7 +91,7 @@ extension AppModel {
     }
 
     func destinationRoot(on volume: VolumeInfo) -> URL {
-        let sub = Prefs.string(PrefKey.destinationSubfolder)
+        let sub = volume.uuid == Self.macFolderID ? "" : Prefs.string(PrefKey.destinationSubfolder)
         return sub.isEmpty ? volume.url : volume.url.appendingPathComponent(sub, isDirectory: true)
     }
 
