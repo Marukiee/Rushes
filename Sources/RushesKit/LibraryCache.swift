@@ -9,6 +9,7 @@ public final class LibraryCache: @unchecked Sendable {
     private let lock = NSLock()
     private let directory: URL
     private var metadata: [String: MediaMetadata] = [:]
+    private var analyses: [String: ClipAnalysis] = [:]
     private var dirty = false
 
     public init(directory: URL? = nil) {
@@ -19,6 +20,10 @@ public final class LibraryCache: @unchecked Sendable {
         if let data = try? Data(contentsOf: base.appendingPathComponent("metadata.json")),
            let stored = try? JSONDecoder().decode([String: MediaMetadata].self, from: data) {
             metadata = stored
+        }
+        if let data = try? Data(contentsOf: base.appendingPathComponent("analysis.json")),
+           let stored = try? JSONDecoder().decode([String: ClipAnalysis].self, from: data) {
+            analyses = stored
         }
     }
 
@@ -41,15 +46,32 @@ public final class LibraryCache: @unchecked Sendable {
         lock.unlock()
     }
 
+    /// What the look at a clip or photo found, for the suggestions.
+    public func analysis(for item: MediaItem, root: URL) -> ClipAnalysis? {
+        lock.lock()
+        defer { lock.unlock() }
+        return analyses[Self.key(item.primary, root: root)]
+    }
+
+    public func store(_ value: ClipAnalysis, for item: MediaItem, root: URL) {
+        lock.lock()
+        analyses[Self.key(item.primary, root: root)] = value
+        dirty = true
+        lock.unlock()
+    }
+
     /// Writes what was learned. Cheap when nothing is new.
     public func save() {
         lock.lock()
         guard dirty else { lock.unlock(); return }
-        let snapshot = metadata
+        let snapshot = metadata, looked = analyses
         dirty = false
         lock.unlock()
         if let data = try? JSONEncoder().encode(snapshot) {
             try? data.write(to: directory.appendingPathComponent("metadata.json"), options: .atomic)
+        }
+        if let data = try? JSONEncoder().encode(looked) {
+            try? data.write(to: directory.appendingPathComponent("analysis.json"), options: .atomic)
         }
     }
 
@@ -72,6 +94,7 @@ public final class LibraryCache: @unchecked Sendable {
     public func clear() {
         lock.lock()
         metadata = [:]
+        analyses = [:]
         dirty = false
         lock.unlock()
         try? FileManager.default.removeItem(at: directory)

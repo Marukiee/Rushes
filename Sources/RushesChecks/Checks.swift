@@ -236,6 +236,11 @@ enum LedgerTests {
         expect(ledger.hasImported(file))
         expect(!ledger.hasImported(entry("DCIM/A.MP4", size: 5, seconds: 9999)))
         expect(ledger.existingCopy(withHash: "abc", excludingImport: id + 1) == "/x/SD 1/DCIM/A.MP4")
+        // Copied is per place: on the disk it is there, for a folder on the Mac it is still new.
+        let fingerprint = "dcim/a.mp4|5|1234"
+        expect(ledger.knownFingerprints(at: "/x").imported.contains(fingerprint), "copied to this place")
+        expect(!ledger.knownFingerprints(at: "/Users/me/Pictures/Rushes").imported.contains(fingerprint), "not yet in another place")
+        expect(!ledger.knownFingerprints(at: "/x/S").imported.contains(fingerprint), "a place is a whole folder, not the start of a name")
         ledger.markSkipped([entry("DCIM/B.MP4")], cardUUID: "U1")
         expect(ledger.wasSkipped(entry("DCIM/B.MP4")))
         ledger.unmarkSkipped([entry("DCIM/B.MP4")])

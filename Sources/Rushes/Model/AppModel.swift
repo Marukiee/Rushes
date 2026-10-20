@@ -276,6 +276,7 @@ final class AppModel {
         }
         if destination?.id != oldDestination {
             reloadLibrary()
+            for session in sessions where session.phase == .ready && session.stage != .importing { restatus(session) }
             for session in sessions where session.phase == .ready && session.stage == .waiting { cardReady(session) }
         }
         syncPrompt()
@@ -311,14 +312,31 @@ final class AppModel {
 
     // MARK: Cards
 
+    /// The place copies go now, as the start of the paths the ledger keeps. Nil when there is none.
+    var copyPlace: String? { destination?.url.path }
+
+    /// What on the card is already in the place that is chosen now. Run again when another place is chosen.
+    func restatus(_ session: CardSession) {
+        guard let review = session.review else { return }
+        let known = ledger.knownFingerprints(at: copyPlace)
+        for item in review.allItems {
+            let status = ImportPlanner.status(of: item, imported: known.imported, skipped: known.skipped)
+            review.statuses[item.id] = status
+            if status == .imported { review.knownAtStart.insert(item.id) } else { review.knownAtStart.remove(item.id) }
+        }
+        review.refresh()
+        session.updateCounts()
+    }
+
     private func scan(_ session: CardSession) {
         let root = session.volume.url
         let ledger = ledger
+        let place = copyPlace
         Task {
             // Cards need a moment after they appear before every folder can be read.
             try? await Task.sleep(for: .milliseconds(500))
             let (scan, known) = await Task.detached(priority: .userInitiated) {
-                (FolderScanner.scan(root: root), ledger.knownFingerprints())
+                (FolderScanner.scan(root: root), ledger.knownFingerprints(at: place))
             }.value
             guard sessions.contains(where: { $0.id == session.id }) else { return }
             let review = ReviewModel(mode: .card, root: root, title: session.volume.name, items: scan.items)

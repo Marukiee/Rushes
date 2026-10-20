@@ -501,7 +501,10 @@ final class ReviewModel {
             LibraryCache.shared.store(meta, for: item, root: root)
         }
         guard analyse, item.kind != .audio else { return (item.id, meta, nil) }
-        return (item.id, meta, await ClipAnalyzer.analyze(item, root: root))
+        if let cached = LibraryCache.shared.analysis(for: item, root: root) { return (item.id, meta, cached) }
+        let analysis = await ClipAnalyzer.analyze(item, root: root)
+        LibraryCache.shared.store(analysis, for: item, root: root)
+        return (item.id, meta, analysis)
     }
 
     private func recomputeSuggestions(_ settings: SuggestionSettings) {

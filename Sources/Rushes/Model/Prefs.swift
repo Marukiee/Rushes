@@ -106,7 +106,8 @@ enum Prefs {
             PrefKey.useProxies: true,
             PrefKey.lutMode: LUTMode.auto.rawValue,
             PrefKey.finderTags: false,
-            PrefKey.suggestionsEnabled: true,
+            // Off unless asked for: looking at every photo takes time and the suggestions are often wrong.
+            PrefKey.suggestionsEnabled: false,
             PrefKey.shortClipSeconds: 1.0,
             PrefKey.blurRatio: 0.2,
             PrefKey.photosInSavings: false,

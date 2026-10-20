@@ -297,7 +297,7 @@ private struct ReviewSettings: View {
     @AppStorage(PrefKey.advanceAfterVerdict) private var advance = true
     @AppStorage(PrefKey.useProxies) private var proxies = true
     @AppStorage(PrefKey.lutMode) private var lut = LUTMode.auto.rawValue
-    @AppStorage(PrefKey.suggestionsEnabled) private var suggestions = true
+    @AppStorage(PrefKey.suggestionsEnabled) private var suggestions = false
     @AppStorage(PrefKey.shortClipSeconds) private var shortClip = 1.0
     @AppStorage(PrefKey.blurRatio) private var blurRatio = 0.2
     @AppStorage(PrefKey.finderTags) private var tags = false

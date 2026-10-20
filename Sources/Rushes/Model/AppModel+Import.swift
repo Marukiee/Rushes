@@ -31,7 +31,7 @@ extension AppModel {
         }
         guard let review = session.review, let scan = session.scan else { return }
 
-        let known = ledger.knownFingerprints()
+        let known = ledger.knownFingerprints(at: destination.url.path)
         var dates: [String: Date] = [:]
         for item in scan.items { dates[item.id] = review.date(of: item) }
         let destinationRoot = destinationRoot(on: destination)
@@ -204,7 +204,7 @@ extension AppModel {
         }
         // What arrived is on the disk now. It stays in view with its choice, so the next day can follow without a jump.
         if let review = session.review {
-            let known = ledger.knownFingerprints()
+            let known = ledger.knownFingerprints(at: copyPlace)
             for item in review.allItems where ImportPlanner.status(of: item, imported: known.imported, skipped: []) == .imported {
                 review.statuses[item.id] = .imported
             }

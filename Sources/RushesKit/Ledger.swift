@@ -164,11 +164,15 @@ public final class Ledger: @unchecked Sendable {
         }
     }
 
-    /// All fingerprints in one go, for sorting a whole card into new and known without a query per file.
-    public func knownFingerprints() -> (imported: Set<String>, skipped: Set<String>) {
+    /// All fingerprints in one go, for sorting a whole card into new and known without a query per file. With a place, only
+    /// what was copied to that place counts as copied: a file on the disk is still new for a folder on the Mac, and the other
+    /// way round. What was left out counts everywhere, since that was a choice about the card.
+    public func knownFingerprints(at place: String? = nil) -> (imported: Set<String>, skipped: Set<String>) {
         locked {
             var imported = Set<String>(), skipped = Set<String>()
-            _ = try? db.query("SELECT rel, size, mtime FROM files") { row in
+            let prefix = place.map { $0.hasSuffix("/") ? $0 : $0 + "/" }
+            _ = try? db.query("SELECT rel, size, mtime, dest FROM files") { row in
+                if let prefix, !(row[3].text ?? "").hasPrefix(prefix) { return }
                 imported.insert("\(row[0].text ?? "")|\(row[1].int ?? 0)|\(row[2].int ?? 0)")
             }
             _ = try? db.query("SELECT rel, size, mtime FROM skipped") { row in

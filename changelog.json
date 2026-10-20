@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.2.12",
+    "date": "2026-10-20",
+    "highlight": false,
+    "en": {
+      "title": "Copied, per place",
+      "better": [
+        "What is already copied counts per place: what is on the disk can still go to your Mac, and the other way round",
+        "A card is read faster: suggestions are off unless you turn them on, and what was looked at is remembered"
+      ]
+    },
+    "nl": {
+      "title": "Gekopieerd, per plek",
+      "better": [
+        "Wat al gekopieerd is telt per plek: wat op de schijf staat kan nog naar je Mac, en andersom",
+        "Een kaart wordt sneller gelezen: suggesties staan uit tenzij je ze aanzet, en wat al bekeken is wordt onthouden"
+      ]
+    }
+  },
+  {
     "version": "0.2.11",
     "date": "2026-10-20",
     "highlight": false,
