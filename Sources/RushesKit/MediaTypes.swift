@@ -46,7 +46,7 @@ public enum MediaTypes {
 }
 
 /// One file as found on a card or a disk.
-public struct FileEntry: Hashable, Sendable {
+public struct FileEntry: Hashable, Sendable, Codable {
     public let rel: String
     public let size: UInt64
     public let modified: Date
@@ -72,10 +72,10 @@ public struct FileEntry: Hashable, Sendable {
 }
 
 /// A clip or a picture together with the small files that belong to it.
-public struct MediaItem: Identifiable, Hashable, Sendable {
-    public enum CompanionRole: String, Sendable { case sidecar, proxy, thumbnail, pair, other }
+public struct MediaItem: Identifiable, Hashable, Sendable, Codable {
+    public enum CompanionRole: String, Sendable, Codable { case sidecar, proxy, thumbnail, pair, other }
 
-    public struct Companion: Hashable, Sendable {
+    public struct Companion: Hashable, Sendable, Codable {
         public let entry: FileEntry
         public let role: CompanionRole
     }

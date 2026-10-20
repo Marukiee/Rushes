@@ -107,6 +107,7 @@ let tests: [(String, () throws -> Void)] = [
     ("MiscTests.theSlotOfAMacIsStillACard", MiscTests.theSlotOfAMacIsStillACard),
     ("MiscTests.marksGoInASidecarAndNeverIntoTheFile", MiscTests.marksGoInASidecarAndNeverIntoTheFile),
     ("MiscTests.starsGoIntoThePhotoLikeTheCameraDoes", MiscTests.starsGoIntoThePhotoLikeTheCameraDoes),
+    ("MiscTests.whatWasReadIsKept", MiscTests.whatWasReadIsKept),
     ("MiscTests.cardNames", MiscTests.cardNames),
     ("MiscTests.binNames", MiscTests.binNames),
     ("MiscTests.cubeLUT", MiscTests.cubeLUT),

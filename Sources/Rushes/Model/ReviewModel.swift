@@ -445,9 +445,12 @@ final class ReviewModel {
     /// Reads dates, durations and cameras, then looks at the clips to suggest what can go. Runs in the background.
     func startEnriching() {
         enrichTask?.cancel()
-        enriching = true
-        enrichDone = 0
-        let items = allItems
+        // What is known already is not read again: from this run, or from the cache of an earlier one.
+        let known = metadata
+        let items = allItems.filter { known[$0.id] == nil || (mode == .card && analysis[$0.id] == nil && Prefs.suggestions.enabled) }
+        enriching = !items.isEmpty
+        enrichDone = allItems.count - items.count
+        guard !items.isEmpty else { return }
         let root = root
         // Suggestions are for a card that is about to be copied. A folder on the disk only needs dates and durations.
         var settings = Prefs.suggestions
@@ -474,6 +477,7 @@ final class ReviewModel {
                     }
                 }
             }
+            LibraryCache.shared.save()
             await MainActor.run {
                 guard let self else { return }
                 self.recomputeSuggestions(settings)
@@ -489,7 +493,13 @@ final class ReviewModel {
     }
 
     private static func work(_ item: MediaItem, root: URL, analyse: Bool) async -> (String, MediaMetadata, ClipAnalysis?) {
-        let meta = await MediaProbe.probe(item, root: root)
+        let meta: MediaMetadata
+        if let cached = LibraryCache.shared.metadata(for: item, root: root) {
+            meta = cached
+        } else {
+            meta = await MediaProbe.probe(item, root: root)
+            LibraryCache.shared.store(meta, for: item, root: root)
+        }
         guard analyse, item.kind != .audio else { return (item.id, meta, nil) }
         return (item.id, meta, await ClipAnalyzer.analyze(item, root: root))
     }

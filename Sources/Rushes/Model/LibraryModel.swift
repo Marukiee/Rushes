@@ -63,14 +63,25 @@ final class LibraryModel {
         loadedCount = 0
         let previous = Dictionary(uniqueKeysWithValues: folders.map { ($0.id, $0) })
         folders = folders.filter { folder in roots.contains { $0.path == folder.id } }
+        // What was read last time shows at once; the disk is then looked at again quietly, and a folder is only taken up again
+        // when its files changed.
+        for root in roots where previous[root.path] == nil {
+            if let cached = LibraryCache.shared.scan(for: root) { add(scan: cached, previous: nil, index: AppModel.shared.resolve.index) }
+        }
+        let shown = Dictionary(uniqueKeysWithValues: folders.map { ($0.id, $0) })
         loadTask = Task { [weak self] in
             for root in roots {
                 if Task.isCancelled { break }
                 let scan = await Task.detached(priority: .utility) { FolderScanner.scan(root: root) }.value
                 if Task.isCancelled { break }
                 guard let self else { return }
+                Task.detached(priority: .background) { LibraryCache.shared.storeScan(scan) }
+                if let current = shown[root.path], LibraryCache.sameFiles(current.review.allItems, scan.items) {
+                    self.loadedCount += 1
+                    continue
+                }
                 // The index of the moment, not the one from when the loading began: the projects may have been read since.
-                self.add(scan: scan, previous: previous[root.path], index: AppModel.shared.resolve.index)
+                self.add(scan: scan, previous: shown[root.path] ?? previous[root.path], index: AppModel.shared.resolve.index)
                 self.loadedCount += 1
             }
             self?.isLoading = false

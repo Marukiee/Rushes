@@ -394,7 +394,7 @@ private struct LibrarySettings: View {
             }
             Section("Cache") {
                 LabeledContent("Thumbnails: \(Format.bytes(cacheSize))") {
-                    Button("Clear") { Task { await Thumbnailer.shared.clearCache(); cacheSize = await Thumbnailer.shared.cacheSize() } }
+                    Button("Clear") { Task { await Thumbnailer.shared.clearCache(); LibraryCache.shared.clear(); cacheSize = await Thumbnailer.shared.cacheSize() } }
                 }
             }
         }

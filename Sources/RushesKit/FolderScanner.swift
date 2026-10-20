@@ -1,6 +1,6 @@
 import Foundation
 
-public struct ScanResult: Sendable {
+public struct ScanResult: Sendable, Codable {
     public var root: URL
     public var items: [MediaItem]
     /// Everything that is not a clip or a picture: the folder structure of the card, its index files, the LUTs.

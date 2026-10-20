@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.2.11",
+    "date": "2026-10-20",
+    "highlight": false,
+    "en": {
+      "title": "Faster library",
+      "better": [
+        "The library shows at once and a file that did not change is never read again"
+      ]
+    },
+    "nl": {
+      "title": "Snellere bibliotheek",
+      "better": [
+        "De bibliotheek staat meteen klaar en een bestand dat niet veranderd is wordt nooit opnieuw gelezen"
+      ]
+    }
+  },
+  {
     "version": "0.2.10",
     "date": "2026-10-20",
     "highlight": false,

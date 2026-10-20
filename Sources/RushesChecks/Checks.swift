@@ -333,6 +333,28 @@ enum MiscTests {
         expect(try !InFileRating.write(5, to: other))
     }
 
+    static func whatWasReadIsKept() throws {
+        let place = FileManager.default.temporaryDirectory.appendingPathComponent("rushes-cache-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: place) }
+        let root = URL(fileURLWithPath: "/Volumes/Disk/SD 3")
+        let entry = FileEntry(rel: "PRIVATE/M4ROOT/CLIP/C0001.MP4", size: 100, modified: Date(timeIntervalSince1970: 1_790_000_000), created: nil)
+        let item = MediaItem(primary: entry, kind: .video)
+        var meta = MediaMetadata()
+        meta.duration = 12.5
+        let cache = LibraryCache(directory: place)
+        cache.store(meta, for: item, root: root)
+        cache.save()
+        cache.storeScan(ScanResult(root: root, items: [item], extras: []))
+
+        let again = LibraryCache(directory: place)
+        expect(again.metadata(for: item, root: root)?.duration == 12.5, "what a file is survives a restart")
+        expect(again.scan(for: root)?.items == [item], "and so do the files of a folder")
+        let changed = MediaItem(primary: FileEntry(rel: entry.rel, size: 101, modified: entry.modified, created: nil), kind: .video)
+        expect(again.metadata(for: changed, root: root) == nil, "a file that changed is read again")
+        expect(LibraryCache.sameFiles([item], [item]))
+        expect(!LibraryCache.sameFiles([item], [changed]))
+    }
+
     static func cardNames() {
         expect(CardNaming.nextNumber(ledgerHighest: 2, existingFolders: ["SD 3 Zweden", "SD 4", "Backups"]) == 5)
         expect(CardNaming.folderName(number: 5, name: "Zweden: dag/1") == "SD 5 Zweden dag 1")
