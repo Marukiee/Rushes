@@ -52,6 +52,8 @@ enum PrefKey {
     static let lutMode = "lutMode"
     /// What the main button of a card does with what was chosen: copy it, or mark it on the card (stars or flag).
     static let chosenAction = "chosenAction"
+    /// The next photo opens as far zoomed in, on the same spot, as the one before, for comparing faces across a burst.
+    static let keepZoom = "keepZoom"
     static let lookOn = "lookOn"
     static let finderTags = "finderTags"
     static let suggestionsEnabled = "suggestionsEnabled"
@@ -105,6 +107,7 @@ enum Prefs {
             PrefKey.advanceAfterVerdict: true,
             PrefKey.useProxies: true,
             PrefKey.lutMode: LUTMode.auto.rawValue,
+            PrefKey.keepZoom: true,
             PrefKey.finderTags: false,
             // Off unless asked for: looking at every photo takes time and the suggestions are often wrong.
             PrefKey.suggestionsEnabled: false,

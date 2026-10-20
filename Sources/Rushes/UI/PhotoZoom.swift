@@ -13,7 +13,14 @@ final class PhotoZoom {
     private(set) var scale: CGFloat = 1
     private(set) var offset: CGSize = .zero
     /// The size of the picture on screen, to zoom from the middle when a key is used.
-    var viewSize: CGSize = .zero
+    var viewSize: CGSize = .zero {
+        // The next photo can have another shape: the spot that was zoomed into stays the same part of the picture.
+        didSet {
+            guard oldValue.width > 0, oldValue.height > 0, viewSize != oldValue else { return }
+            offset = CGSize(width: offset.width * viewSize.width / oldValue.width, height: offset.height * viewSize.height / oldValue.height)
+            clamp()
+        }
+    }
 
     var isZoomed: Bool { scale > 1.01 }
 

@@ -295,6 +295,7 @@ private struct ReviewSettings: View {
     @AppStorage(PrefKey.soundOn) private var sound = false
     @AppStorage(PrefKey.loopClips) private var loop = true
     @AppStorage(PrefKey.advanceAfterVerdict) private var advance = true
+    @AppStorage(PrefKey.keepZoom) private var keepZoom = true
     @AppStorage(PrefKey.useProxies) private var proxies = true
     @AppStorage(PrefKey.lutMode) private var lut = LUTMode.auto.rawValue
     @AppStorage(PrefKey.suggestionsEnabled) private var suggestions = false
@@ -309,6 +310,11 @@ private struct ReviewSettings: View {
                 DescribedToggle("Sound on", isOn: $sound)
                 DescribedToggle("Play a clip again when it ends", isOn: $loop)
                 DescribedToggle("Go to the next one after Keep or Leave out", isOn: $advance)
+                DescribedToggle(
+                    "Keep the zoom for the next photo",
+                    subtitle: "The next photo opens zoomed in on the same spot, for comparing faces in a series.",
+                    isOn: $keepZoom
+                )
                 DescribedToggle(
                     "Use the camera's small proxy files when there are any",
                     subtitle: "A proxy plays smoothly even from a slow card. The original is what gets copied.",

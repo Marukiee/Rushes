@@ -385,6 +385,7 @@
 "Keep copying" = "Blijf kopiëren";
 "Keep everything not judged" = "Behoud alles wat niet is beoordeeld";
 "Keep something first" = "Behoud eerst iets";
+"Keep the zoom for the next photo" = "Zoom houden voor de volgende foto";
 "Keep, Leave out and the stars go back to nothing. Undo (Z) brings them back." = "Behouden, Overslaan en de sterren gaan terug naar niets. Ongedaan (Z) haalt ze terug.";
 "Kept" = "Behouden";
 "Kept %@" = "%@ behouden";
@@ -654,6 +655,7 @@
 "The download is not signed by Rushes, so it was not installed" = "De download is niet door Rushes ondertekend, dus hij is niet geïnstalleerd";
 "The folder could not be renamed" = "De map kon niet worden hernoemd";
 "The new version is signed by someone else, so it was not installed" = "De nieuwe versie is door iemand anders ondertekend, dus hij is niet geïnstalleerd";
+"The next photo opens zoomed in on the same spot, for comparing faces in a series." = "De volgende foto opent ingezoomd op dezelfde plek, om gezichten in een serie te vergelijken.";
 "The number stays, so Rushes and DaVinci Resolve still know the folder. Only the words after it change." = "Het nummer blijft, zodat Rushes en DaVinci Resolve de map nog herkennen. Alleen de woorden erna veranderen.";
 "The projects of the local database are read from their files. Resolve does not have to be open." = "De projecten van de lokale database worden uit hun bestanden gelezen. Resolve hoeft niet open te staan.";
 "The second copy disk is not connected, copying to %@ only" = "De schijf voor de tweede kopie is niet verbonden, er wordt alleen naar %@ gekopieerd";

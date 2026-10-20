@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.2.13",
+    "date": "2026-10-20",
+    "highlight": false,
+    "en": {
+      "title": "Compare faces",
+      "new": [
+        "The next photo opens as far zoomed in, on the same spot, to compare faces in a series. On and off in the More menu or the settings"
+      ]
+    },
+    "nl": {
+      "title": "Gezichten vergelijken",
+      "new": [
+        "De volgende foto opent even ver ingezoomd op dezelfde plek, om gezichten in een serie te vergelijken. Aan en uit in het menu met de drie puntjes of de instellingen"
+      ]
+    }
+  },
+  {
     "version": "0.2.12",
     "date": "2026-10-20",
     "highlight": false,

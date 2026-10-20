@@ -178,6 +178,8 @@ struct CardMoreMenu: View {
                 .disabled(model.counts().suggested == 0)
             Button("Keep everything not judged", systemImage: "checkmark.circle") { model.keepAllUndecided() }
             Divider()
+            KeepZoomToggle()
+            Divider()
             Button("Reset the selected (R)", systemImage: "arrow.uturn.backward.circle") { model.reset() }
                 .disabled(model.targets.isEmpty)
             Button("Reset all choices...", systemImage: "arrow.counterclockwise") {
@@ -188,6 +190,15 @@ struct CardMoreMenu: View {
             Label("More", systemImage: "ellipsis")
         }
         .help("More")
+    }
+}
+
+/// Whether the next photo opens zoomed in like the one before.
+struct KeepZoomToggle: View {
+    @AppStorage(PrefKey.keepZoom) private var keepZoom = true
+
+    var body: some View {
+        Toggle("Keep the zoom for the next photo", isOn: $keepZoom)
     }
 }
 

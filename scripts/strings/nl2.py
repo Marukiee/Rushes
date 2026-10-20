@@ -1,4 +1,6 @@
 T = {
+"Keep the zoom for the next photo": "Zoom houden voor de volgende foto",
+"The next photo opens zoomed in on the same spot, for comparing faces in a series.": "De volgende foto opent ingezoomd op dezelfde plek, om gezichten in een serie te vergelijken.",
 "A folder on this Mac...": "Een map op deze Mac...",
 "Choose a folder...": "Kies een map...",
 "Choose another folder...": "Kies een andere map...",

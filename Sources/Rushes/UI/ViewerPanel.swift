@@ -250,8 +250,13 @@ struct ViewerPanel: View {
             player.unload()
             photo = nil
             fullPhoto = nil
-            zoom.reset()
+            if !Prefs.bool(PrefKey.keepZoom) { zoom.reset() }
             photo = await Thumbnailer.shared.image(for: item, root: model.root, maxPixel: 2400)
+            // Still zoomed in from the photo before: this one needs its whole size too.
+            if zoom.isZoomed, model.focusID == item.id {
+                let full = await FullPhoto.load(item, root: model.root)
+                if model.focusID == item.id { fullPhoto = full }
+            }
         case .audio:
             player.unload()
             photo = nil
