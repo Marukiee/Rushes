@@ -123,7 +123,7 @@ struct ZoomablePhoto: View {
                             .rushesVideoGlass(.capsule)
                         }
                         .buttonStyle(.bouncy)
-                        .help("Fit the photo (⌘0)")
+                        .help("Fit the photo (Z)")
                         .padding(12)
                         .transition(.opacity)
                     }

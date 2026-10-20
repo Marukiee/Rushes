@@ -68,6 +68,8 @@ struct KeyHandler: NSViewRepresentable {
                 case "=", "+": withAnimation(.rushes) { zoom.zoom(by: 1.5) }; return true
                 case "-": withAnimation(.rushes) { zoom.zoom(by: 1 / 1.5) }; return true
                 case "0" where flags.contains(.command): withAnimation(.rushes) { zoom.reset() }; return true
+                // Z is undo, except while a photo is zoomed in: then it zooms back out first.
+                case "z" where !flags.contains(.command) && zoom.isZoomed: withAnimation(.rushes) { zoom.reset() }; return true
                 default: break
                 }
             }

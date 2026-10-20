@@ -329,7 +329,7 @@
 "Files checked" = "Bestanden gecontroleerd";
 "Filter" = "Filter";
 "Finder" = "Finder";
-"Fit the photo (⌘0)" = "Hele foto (⌘0)";
+"Fit the photo (Z)" = "Hele foto (Z)";
 "Five seconds back or forward" = "Vijf seconden terug of vooruit";
 "Five stars for %@" = "Vijf sterren voor %@";
 "Five stars for %lld" = "Vijf sterren voor %lld";
@@ -362,7 +362,6 @@
 "Imports" = "Imports";
 "In a project" = "In een project";
 "In all projects" = "In alle projecten";
-"In each photo, as the camera rates" = "In elke foto, zoals de camera beoordeelt";
 "In the media pool of %@ project(s), on no timeline" = "In de media pool van %@ project(en), op geen enkele timeline";
 "In the media pool of %lld project(s), on no timeline" = "In de media pool van %lld project(en), op geen enkele timeline";
 "In the media pool, on no timeline" = "In de media pool, op geen timeline";
@@ -380,6 +379,7 @@
 "Keep all of this day" = "Behoud alles van deze dag";
 "Keep copying" = "Blijf kopiëren";
 "Keep everything not judged" = "Behoud alles wat niet is beoordeeld";
+"Keep something first" = "Behoud eerst iets";
 "Keep, Leave out and the stars go back to nothing. Undo (Z) brings them back." = "Behouden, Overslaan en de sterren gaan terug naar niets. Ongedaan (Z) haalt ze terug.";
 "Kept" = "Behouden";
 "Kept %@" = "%@ behouden";
@@ -445,12 +445,12 @@
 "Nederlands" = "Nederlands";
 "New footage" = "Nieuw beeld";
 "Next one not judged" = "Volgende die nog niet is beoordeeld";
-"Next to each file, as a green label" = "Naast elk bestand, als groen label";
 "No DaVinci Resolve projects were found in the local database." = "In de lokale database zijn geen DaVinci Resolve-projecten gevonden.";
 "No card" = "Geen kaart";
 "No card folders yet" = "Nog geen kaartmappen";
 "No card in" = "Geen kaart erin";
 "No clips in Resolve pointed to the old name" = "Geen clips in Resolve wezen naar de oude naam";
+"No disk connected" = "Geen schijf verbonden";
 "No disk to copy to" = "Geen schijf om naar te kopiëren";
 "No project is open" = "Er is geen project open";
 "No projects found yet. Rushes looks in the local database of Resolve. If you use a PostgreSQL database, the projects cannot be read this way." = "Nog geen projecten gevonden. Rushes kijkt in de lokale database van Resolve. Gebruik je een PostgreSQL-database, dan kunnen de projecten niet zo worden gelezen.";
@@ -486,7 +486,6 @@
 "Off: only what you marked Keep is copied. What you did not judge stays on the card for next time." = "Uit: alleen wat je als Behouden markeerde wordt gekopieerd. Wat je niet beoordeelde blijft op de kaart voor de volgende keer.";
 "On an exFAT disk every tag adds a small hidden file next to the original." = "Op een exFAT-schijf zet elke tag een klein verborgen bestand naast het origineel.";
 "On disk" = "Op schijf";
-"On the card, nothing is copied" = "Op de kaart, er wordt niets gekopieerd";
 "One frame back or forward" = "Eén beeld terug of vooruit";
 "Only ask me" = "Vraag het me alleen";
 "Only clips that are in no DaVinci Resolve project, and that you did not protect. They go to the Trash, so you can still put them back." = "Alleen clips die in geen enkel DaVinci Resolve-project staan en die je niet hebt beschermd. Ze gaan naar de prullenbak, dus je kunt ze nog terugzetten.";
@@ -608,6 +607,9 @@
 "Show in Finder" = "Toon in Finder";
 "Show in the Dock" = "Toon in het Dock";
 "Show log footage with" = "Toon log-beeld met";
+"Show only what you did not judge yet" = "Toon alleen wat je nog niet hebt beoordeeld";
+"Show only what you kept" = "Toon alleen wat je hebt behouden";
+"Show only what you left out" = "Toon alleen wat je hebt overgeslagen";
 "Show what was copied or left out before" = "Laat zien wat eerder is gekopieerd of overgeslagen";
 "Size" = "Grootte";
 "Some files did not arrive intact." = "Sommige bestanden zijn niet heel aangekomen.";
@@ -709,7 +711,7 @@
 "You have version %@" = "Je hebt versie %@";
 "You have version %lld" = "Je hebt versie %lld";
 "Your disk is not connected" = "Je schijf is niet verbonden";
-"Zoom in or out" = "In- of uitzoomen";
+"Zoom in, out, and back to the whole photo" = "In- en uitzoomen, en terug naar de hele foto";
 "about %@ min left" = "nog ongeveer %@ min";
 "about %lld min left" = "nog ongeveer %lld min";
 "and %@ more" = "en nog %@";

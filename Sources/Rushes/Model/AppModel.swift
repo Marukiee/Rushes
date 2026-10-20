@@ -260,7 +260,9 @@ final class AppModel {
             for item in scan.items {
                 let status = ImportPlanner.status(of: item, imported: known.imported, skipped: known.skipped)
                 review.statuses[item.id] = status
-                if status != .new { review.knownAtStart.insert(item.id) }
+                // What is on the disk already steps aside. What was left out stays in the list, marked as left out, so it can
+                // be looked at again and taken back in.
+                if status == .imported { review.knownAtStart.insert(item.id) }
                 // What was chosen the last time this card was in comes back, and so do the stars.
                 let fingerprint = item.primary.fingerprint
                 if let choice = choices[fingerprint] {

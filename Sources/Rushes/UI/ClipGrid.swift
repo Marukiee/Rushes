@@ -74,6 +74,19 @@ struct ClipGrid: View {
 
     private let columns = [GridItem(.adaptive(minimum: 150, maximum: 220), spacing: Space.s)]
 
+    /// The clip at the top of what is in view, for the date beside the scroller and for staying on that day.
+    @LocalState private var topID: String?
+    @LocalState private var scrolling = false
+    @LocalState private var scroll = ScrollPlace()
+    /// A jump the grid makes itself, so the scroll that follows a new focus does not undo it.
+    @LocalState private var holdFocusScroll = false
+
+    struct ScrollPlace: Equatable {
+        var offset: CGFloat = 0
+        var content: CGFloat = 1
+        var container: CGFloat = 1
+    }
+
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
@@ -89,20 +102,73 @@ struct ClipGrid: View {
                         }
                     }
                 }
+                .scrollTargetLayout()
                 .padding(.bottom, Space.xl)
                 .background(GeometryReader { geometry in
                     Color.clear.onChange(of: geometry.size.width, initial: true) { _, width in
-                        model.gridColumns = max(1, Int((width + 8) / (120 + 8)))
+                        model.gridColumns = max(1, Int((width + 8) / (150 + 8)))
                     }
                 })
             }
+            .onScrollTargetVisibilityChange(idType: String.self, threshold: 0.5) { ids in
+                if let first = ids.first { topID = first }
+            }
+            .onScrollGeometryChange(for: ScrollPlace.self) { geometry in
+                ScrollPlace(offset: geometry.contentOffset.y + geometry.contentInsets.top, content: geometry.contentSize.height, container: geometry.containerSize.height)
+            } action: { _, place in scroll = place }
+            .onScrollPhaseChange { _, phase in
+                withAnimation(.rushesFade) { scrolling = phase != .idle }
+            }
+            .overlay(alignment: .topTrailing) { dateBubble }
             .scrollIndicators(.automatic)
             .contentMargins(.top, topInset, for: .scrollContent)
             .contentMargins(.top, topInset, for: .scrollIndicators)
             .scrollEdgeEffectStyle(.soft, for: .top)
             .onChange(of: model.focusID) { _, id in
+                if holdFocusScroll { holdFocusScroll = false; return }
                 if let id { withAnimation(.rushes) { proxy.scrollTo(id, anchor: .center) } }
             }
+            // Switching between all, videos and photos stays on the day that was in view, it does not start over at the top.
+            .onChange(of: model.kindFilter) { _, _ in
+                guard let day = topDay else { return }
+                let start = Calendar.current.startOfDay(for: day)
+                guard let target = model.visible.first(where: { model.date(of: $0) >= start }) ?? model.visible.last else { return }
+                DispatchQueue.main.async {
+                    holdFocusScroll = model.focusID != target.id
+                    model.focus(target.id)
+                    proxy.scrollTo(target.id, anchor: .top)
+                }
+            }
+        }
+    }
+}
+
+extension ClipGrid {
+    /// The day of the clip at the top of the view.
+    private var topDay: Date? {
+        guard let topID, let item = model.allItems.first(where: { $0.id == topID }) else { return nil }
+        return model.date(of: item)
+    }
+
+    /// While the list is scrolled, the day in view floats beside the scroller, where the thumb is, the way Photos does it.
+    @ViewBuilder
+    private var dateBubble: some View {
+        if scrolling, let day = topDay, scroll.content > scroll.container {
+            GeometryReader { geometry in
+                let track = max(1, geometry.size.height - topInset - 44)
+                let fraction = min(1, max(0, scroll.offset / max(1, scroll.content - scroll.container)))
+                Text(Format.shortDay(day))
+                    .font(.callout.weight(.semibold))
+                    .padding(.horizontal, Space.m)
+                    .padding(.vertical, 6)
+                    .rushesGlass(Capsule())
+                    .fixedSize()
+                    .offset(y: topInset + fraction * track)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .padding(.trailing, 18)
+            }
+            .allowsHitTesting(false)
+            .transition(.opacity)
         }
     }
 }

@@ -1,4 +1,11 @@
 T = {
+"Fit the photo (Z)": "Hele foto (Z)",
+"Keep something first": "Behoud eerst iets",
+"No disk connected": "Geen schijf verbonden",
+"Show only what you did not judge yet": "Toon alleen wat je nog niet hebt beoordeeld",
+"Show only what you kept": "Toon alleen wat je hebt behouden",
+"Show only what you left out": "Toon alleen wat je hebt overgeslagen",
+"Zoom in, out, and back to the whole photo": "In- en uitzoomen, en terug naar de hele foto",
 "%@ videos or files without room have them in a file beside them, which the camera does not read.": "%@ video's of bestanden zonder ruimte hebben ze in een bestand ernaast, dat leest de camera niet.",
 "If the camera does not show them, choose Recover Image DB in its menu.": "Toont de camera ze niet, kies dan Recover Image DB (Beeld-DB herstellen) in het menu van de camera.",
 "In each photo, as the camera rates": "In elke foto, zoals de camera beoordeelt",

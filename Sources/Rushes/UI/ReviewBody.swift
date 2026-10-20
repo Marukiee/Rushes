@@ -228,7 +228,7 @@ struct KeyHints: View {
                     hint("M", "Sound on or off")
                     hint("C", "LUT on or off")
                     hint("F", "Only the picture, Escape to go back")
-                    hint("=  -  \u{2318}0", "Zoom in or out")
+                    hint("=  -  Z", "Zoom in, out, and back to the whole photo")
                     hint("I", "Details on or off")
                     hint("⇧ click, ⌘ click", "Select several")
                     hint("Click a day", "Select the whole day")

@@ -1,5 +1,44 @@
 [
   {
+    "version": "0.2.7",
+    "date": "2026-10-20",
+    "highlight": false,
+    "en": {
+      "title": "Easier to find your way",
+      "new": [
+        "The date shows beside the scroller while you scroll",
+        "Click a count in the bar to see only what you kept, left out or did not judge",
+        "A bar shows how far the stars are"
+      ],
+      "better": [
+        "Switching between all, videos and photos stays on the same day",
+        "Z zooms a photo back out",
+        "The bar at the bottom names the disk in its button and has no loose line of text"
+      ],
+      "fixed": [
+        "What you left out on a card stays in the list",
+        "More room around Eject"
+      ]
+    },
+    "nl": {
+      "title": "Makkelijker je weg vinden",
+      "new": [
+        "De datum staat naast de scrollbalk terwijl je scrolt",
+        "Klik op een teller in de balk om alleen behouden, overgeslagen of niet beoordeeld te zien",
+        "Een laadbalk laat zien hoe ver de sterren zijn"
+      ],
+      "better": [
+        "Wisselen tussen alles, video's en foto's blijft op dezelfde dag",
+        "Z zoomt een foto weer uit",
+        "De balk onderin noemt de schijf in de knop en heeft geen losse regel tekst meer"
+      ],
+      "fixed": [
+        "Wat je op een kaart overslaat blijft in de lijst staan",
+        "Meer ruimte rond Werp uit"
+      ]
+    }
+  },
+  {
     "version": "0.2.6",
     "date": "2026-10-20",
     "highlight": false,

@@ -54,10 +54,12 @@ struct CardReviewPage: View {
             }
             ToolbarSpacer(.fixed, placement: .primaryAction)
             ToolbarItem(placement: .primaryAction) {
-                Button { app.eject(session) } label: { Label("Eject", systemImage: "eject").labelStyle(.titleAndIcon) }
+                Button { app.eject(session) } label: { Label("Eject", systemImage: "eject").labelStyle(.titleAndIcon).padding(.horizontal, Space.xs) }
                     .disabled(app.job?.isRunning == true)
                     .help("Eject the card")
             }
+            // A little room after the last button, so it does not press against the rounded corner of the window.
+            ToolbarSpacer(.fixed, placement: .primaryAction)
         }
     }
 
@@ -105,6 +107,8 @@ private struct ImportBar: View {
     @AppStorage(PrefKey.copyKinds) private var kindsRaw = CopyKinds.all.rawValue
     @AppStorage(PrefKey.chosenAction) private var actionRaw = ChosenAction.copy.rawValue
     @LocalState private var marking = false
+    /// How far marking on the card has got, for the bar that shows it while it works.
+    @LocalState private var progress: (done: Int, total: Int)?
     @LocalState private var conflicts = 0
     @LocalState private var askOverwrite = false
     @LocalState private var pending: ChosenAction = .stars
@@ -148,10 +152,14 @@ private struct ImportBar: View {
         copy: (count: Int, bytes: UInt64), chosen: [MediaItem], detail: Bool, kindWords: Bool
     ) -> some View {
         HStack(spacing: Space.l) {
-            HStack(spacing: Space.xl) {
-                Stat(symbol: "checkmark", tint: VerdictStyle.keep, value: "\(counts.keep)", detail: Format.bytes(review.bytes(for: .keep)))
-                Stat(symbol: "xmark", tint: VerdictStyle.skip, value: "\(counts.skip)", detail: Format.bytes(review.bytes(for: .skip)))
-                Stat(symbol: "circle.dashed", tint: .secondary, value: "\(counts.undecided)", detail: Format.bytes(review.bytes(for: .undecided)))
+            // The counts are filters too: a click shows only what you kept (or left out, or did not judge yet), again shows all.
+            HStack(spacing: Space.xs) {
+                Stat(symbol: "checkmark", tint: VerdictStyle.keep, value: "\(counts.keep)", detail: Format.bytes(review.bytes(for: .keep)),
+                     active: review.stateFilter == .keep, help: "Show only what you kept") { show(.keep) }
+                Stat(symbol: "xmark", tint: VerdictStyle.skip, value: "\(counts.skip)", detail: Format.bytes(review.bytes(for: .skip)),
+                     active: review.stateFilter == .skip, help: "Show only what you left out") { show(.skip) }
+                Stat(symbol: "circle.dashed", tint: .secondary, value: "\(counts.undecided)", detail: Format.bytes(review.bytes(for: .undecided)),
+                     active: review.stateFilter == .undecided, help: "Show only what you did not judge yet") { show(.undecided) }
             }
             .fixedSize()
             Spacer(minLength: Space.m)
@@ -169,36 +177,19 @@ private struct ImportBar: View {
             .labelsHidden()
             .fixedSize()
             .help("What goes along: videos, photos or both")
-            if detail { info(action: action, copy: copy, chosen: chosen).fixedSize() }
-            actionMenu(action: action, kinds: kinds)
+            actionMenu(action: action, kinds: kinds, withDisk: detail)
             primary(action: action, copy: copy, chosen: chosen)
         }
     }
 
-    @ViewBuilder
-    private func info(action: ChosenAction, copy: (count: Int, bytes: UInt64), chosen: [MediaItem]) -> some View {
-        VStack(alignment: .trailing, spacing: 1) {
-            switch action {
-            case .copy:
-                if let destination = app.destination {
-                    if copy.count == 0 {
-                        Text("Keep (⏎) what should go to the disk").font(.caption.weight(.medium)).foregroundStyle(VerdictStyle.hint)
-                    } else {
-                        Text("To \(destination.name)").font(.caption.weight(.medium))
-                    }
-                    Text("\(Format.bytes(destination.available)) free").font(.caption).foregroundStyle(.secondary)
-                } else {
-                    Text("Connect your disk to copy").font(.caption.weight(.medium)).foregroundStyle(VerdictStyle.hint)
-                }
-            case .stars, .flag:
-                Text("On the card, nothing is copied").font(.caption.weight(.medium))
-                Text(action == .stars ? "In each photo, as the camera rates" : "Next to each file, as a green label")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
+    private func show(_ filter: ReviewStateFilter) {
+        withAnimation(.rushes) {
+            review.stateFilter = review.stateFilter == filter ? .all : filter
+            review.refresh()
         }
     }
 
-    private func actionMenu(action: ChosenAction, kinds: CopyKinds) -> some View {
+    private func actionMenu(action: ChosenAction, kinds: CopyKinds, withDisk: Bool) -> some View {
         let selected = review.selection.count > 1 ? review.selection : nil
         let everything = review.toCopy(kinds: kinds, undecidedMeansKeep: true, everything: true)
         return Menu {
@@ -225,7 +216,12 @@ private struct ImportBar: View {
                 .disabled(everything.count == 0)
             }
         } label: {
-            Label(actionTitle(action), systemImage: actionSymbol(action))
+            // Where it goes is part of the choice: copying names the disk, so the bar needs no line of its own for it.
+            if action == .copy, withDisk, let destination = app.destination {
+                Label("To \(destination.name)", systemImage: "externaldrive")
+            } else {
+                Label(actionTitle(action), systemImage: actionSymbol(action))
+            }
         }
         .menuStyle(.button)
         .buttonStyle(.bordered)
@@ -239,14 +235,41 @@ private struct ImportBar: View {
     @ViewBuilder
     private func primary(action: ChosenAction, copy: (count: Int, bytes: UInt64), chosen: [MediaItem]) -> some View {
         let running = app.job?.isRunning == true
+        if let progress {
+            // While the card is being marked, the button makes way for how far it is.
+            HStack(spacing: Space.m) {
+                ProgressCapsule(fraction: Double(progress.done) / Double(max(1, progress.total)))
+                    .frame(width: 140, height: 6)
+                Text("\(progress.done) of \(progress.total)").font(.callout.weight(.semibold).monospacedDigit()).fixedSize()
+            }
+            .padding(.horizontal, Space.l)
+            .frame(height: 34)
+            .transition(.opacity)
+        } else {
+            primaryButton(action: action, copy: copy, chosen: chosen, running: running)
+        }
+    }
+
+    @ViewBuilder
+    private func primaryButton(action: ChosenAction, copy: (count: Int, bytes: UInt64), chosen: [MediaItem], running: Bool) -> some View {
         Group {
             switch action {
             case .copy:
                 Button { app.startImport(session) } label: {
-                    Label("Copy \(copy.count) (\(Format.bytes(copy.bytes)))", systemImage: "square.and.arrow.down.fill").fixedSize()
+                    Group {
+                        if app.destination == nil {
+                            Label("No disk connected", systemImage: "externaldrive.badge.xmark")
+                        } else if copy.count == 0 {
+                            Label("Keep something first", systemImage: "checkmark.circle")
+                        } else {
+                            Label("Copy \(copy.count) (\(Format.bytes(copy.bytes)))", systemImage: "square.and.arrow.down.fill")
+                        }
+                    }
+                    .fixedSize()
                 }
                 .disabled(running || app.destination == nil || copy.count == 0)
-                .help(undecidedMeansKeep ? "Copies what you kept and what you did not judge" : "Copies only what you kept")
+                .help(app.destination == nil ? "Connect your disk to copy" : copy.count == 0 ? "Keep (⏎) what should go to the disk"
+                      : undecidedMeansKeep ? "Copies what you kept and what you did not judge" : "Copies only what you kept")
             case .stars:
                 Button { start(.stars, items: chosen) } label: {
                     Label("Five stars for \(chosen.count)", systemImage: "star.fill").fixedSize()
@@ -298,9 +321,12 @@ private struct ImportBar: View {
         let root = review.root
         marking = true
         Task {
+            progress = (0, items.count)
+            let report: @Sendable (Int) async -> Void = { done in await MainActor.run { progress = (done, items.count) } }
             let result = await Task.detached(priority: .userInitiated) { () -> (written: [String], kept: Int, beside: Int, failure: String?) in
                 var written: [String] = [], kept = 0, beside = 0
-                for item in items {
+                for (index, item) in items.enumerated() {
+                    if index % 3 == 0 { await report(index) }
                     if !overwrite {
                         let existing = CardMarker.existing(item, root: root)
                         let other = mark == .stars ? (existing.rating ?? 5) != 5 : (existing.label ?? CardMarker.label) != CardMarker.label
@@ -320,6 +346,7 @@ private struct ImportBar: View {
                 return (written, kept, beside, nil)
             }.value
             marking = false
+            withAnimation(.rushesFade) { progress = nil }
             // Keeping means five stars here too, so what the app shows matches what is on the card.
             if mark == .stars {
                 for id in result.written {
@@ -395,18 +422,31 @@ private struct Stat: View {
     let tint: Color
     let value: String
     let detail: String
+    var active = false
+    var help: LocalizedStringKey = ""
+    var action: () -> Void = {}
 
     var body: some View {
-        HStack(spacing: Space.s) {
-            Image(systemName: symbol)
-                .font(.system(size: 10, weight: .heavy))
-                .foregroundStyle(.white)
-                .frame(width: 22, height: 22)
-                .background(tint.gradient, in: .circle)
-            VStack(alignment: .leading, spacing: 0) {
-                Text(value).font(.callout.weight(.semibold).monospacedDigit()).contentTransition(.numericText())
-                Text(detail).font(.caption2).foregroundStyle(.secondary)
+        Button(action: action) {
+            HStack(spacing: Space.s) {
+                Image(systemName: symbol)
+                    .font(.system(size: 10, weight: .heavy))
+                    .foregroundStyle(.white)
+                    .frame(width: 22, height: 22)
+                    .background(tint.gradient, in: .circle)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(value).font(.callout.weight(.semibold).monospacedDigit()).contentTransition(.numericText())
+                    Text(detail).font(.caption2).foregroundStyle(.secondary)
+                }
             }
+            .padding(.leading, Space.xs)
+            .padding(.trailing, Space.m)
+            .padding(.vertical, Space.xs)
+            // The one being shown has a pill behind it, so it is plain which part of the card the list is.
+            .background { Capsule().fill(active ? tint.opacity(0.18) : .clear) }
+            .contentShape(Capsule())
         }
+        .buttonStyle(.bouncy)
+        .help(help)
     }
 }
