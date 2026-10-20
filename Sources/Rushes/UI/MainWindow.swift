@@ -113,10 +113,19 @@ private struct IntegritySheet: View {
 private struct HoverRow<Content: View>: View {
     @Environment(\.hoverEnabled) private var hoverEnabled
     @LocalState private var hovering = false
+    /// The number or size at the end of the row. It is part of the row here, so the light under the pointer reaches over it
+    /// as far as the selection does, which a system badge beside the row would not.
+    var badge: String? = nil
     @ViewBuilder var content: Content
 
     var body: some View {
-        content
+        HStack(spacing: Space.s) {
+            content
+            Spacer(minLength: 0)
+            if let badge {
+                Text(badge).font(.callout.monospacedDigit()).foregroundStyle(.secondary).lineLimit(1)
+            }
+        }
             .frame(maxWidth: .infinity, alignment: .leading)
             .background {
                 // Drawn a little wider than the label, so it covers the row the way the selection does.
@@ -141,8 +150,7 @@ struct Sidebar: View {
         List(selection: $app.sidebarSelection) {
             Section {
                 HoverRow { Label("Overview", systemImage: "square.grid.2x2") }.tag(SidebarItem.overview)
-                HoverRow { Label("Card", systemImage: "sdcard") }
-                    .badge(cardBadge)
+                HoverRow(badge: cardBadge > 0 ? "\(cardBadge)" : nil) { Label("Card", systemImage: "sdcard") }
                     .tag(SidebarItem.card)
             }
             Section("Library") {
@@ -150,8 +158,7 @@ struct Sidebar: View {
                     HoverRow { Label("Library", systemImage: "externaldrive") }.tag(SidebarItem.library)
                 } else {
                     ForEach(app.library.folders) { folder in
-                        HoverRow { Label(folder.name, systemImage: "folder") }
-                            .badge(folder.reclaimableBytes > 0 ? Text(Format.bytes(folder.reclaimableBytes)) : nil)
+                        HoverRow(badge: folder.reclaimableBytes > 0 ? Format.bytes(folder.reclaimableBytes) : nil) { Label(folder.name, systemImage: "folder") }
                             .tag(SidebarItem.folder(folder.id))
                     }
                 }

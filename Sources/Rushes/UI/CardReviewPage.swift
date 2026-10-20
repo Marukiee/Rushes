@@ -34,7 +34,8 @@ struct CardReviewPage: View {
                 if review.actionableCount == 0 {
                     NothingNewView(session: session)
                 } else {
-                    ReviewBody(model: review) { SuggestionBanner(model: review) }
+                    // No banner about suggestions: they are often wrong, and the badge on a clip and the More menu are enough.
+                    ReviewBody(model: review)
                 }
             }
         }
